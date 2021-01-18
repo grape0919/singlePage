@@ -18,6 +18,10 @@ def teardown_request(exception):
 def root():
      return render_template("index.html")
 
+@app.route("/result")
+def result():
+     return render_template("result.html")
+
 def connect_db():
     return sqlite3.connect(DATABASE)
 
