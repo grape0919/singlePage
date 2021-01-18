@@ -3,7 +3,6 @@
                 width: 100%; height: 45px;}
 #result_button {color:white; background-color:cadetblue; border-radius: 5px;
                 width: 100%; height: 40px;}
-#result {  }
 .main { display: flex;
         height: 100vh;
         justify-content: center;
