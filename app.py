@@ -16,11 +16,20 @@ def teardown_request(exception):
 
 @app.route("/")
 def root():
-     return render_template("index.html")
+    return render_template("example.html")
+
+@app.route("/manager1")
+def manager1():
+    cur = g.db.cursor().execute('SELECT COM_ID, TITLE, QUESTION FROM QUESTION WHERE Q_ID = {ID}'.format(ID=id))
+    return render_template("admin1.html")
+     
+@app.route("/manager2")
+def manager2():
+    return render_template("admin2.html")
 
 @app.route("/result")
 def result():
-     return render_template("result.html")
+    return render_template("result.html")
 
 def connect_db():
     return sqlite3.connect(DATABASE)
