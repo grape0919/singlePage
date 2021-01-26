@@ -1,7 +1,7 @@
 <html>
     
     <head>
-        <link rel="stylesheet" type="text/css" href="static/style.css">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
         <script type="text/javascript">
             function sum_number(){
                 var number = document.getElementById("number").value;
@@ -35,7 +35,8 @@
 
                 document.getElementById("result_msg").innerText = "* 결과가 나왔습니다.";
                 document.getElementById("result_msg").style = "color: green;";
-                document.getElementById("result_button").value = "결과보기";
+                document.getElementById("result_button").text = "결과보기";
+                document.getElementById("result_button").type = "submit";
                 document.getElementById("result_button").style = "background-color:orange;";
                 console.log(sum);
                 document.getElementById("result_button").onclick = function() { location.href=sum+".html"}
@@ -49,13 +50,15 @@
         </div>
         <div class="main">
             <div style="text-align:center;">
+                <form action="result" method='POST'>
                 <p style="width:300px">숫자 8자리를 입력해주세요</p>
-                <input id="number" type="text" maxlength="8"/>
+                <input id="number" name="code" type="text" maxlength="8"/>
                 <p>ex) 29090802</p>
                 <div id="result">
                     <p id="result_msg" style="color:blue;">* 숫자를 입력후 버튼을 클릭하세요.</p>
-                    <input id="result_button" type="submit" value="입력" onclick="sum_number()" >
+                    <button id="result_button" onclick="sum_number()" >입력</button>
                 <div>
+                <form>
             <div>
         <div>
     </body>

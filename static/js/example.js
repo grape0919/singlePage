@@ -90,11 +90,11 @@ var conversationData = [
   var keyPressDelay = 20,
       betweenConversationDelay = 6000;
   
-  var bannerConversation = $('banner-conversation'),
-      conversationHead = bannerConversation.find('conversation-head'),
-      conversationName = conversationHead.find('name'),
-      conversationWriting = conversationHead.find('writing'),
-      conversationContainer = bannerConversation.find('conversation-container'),
+  var bannerConversation = $('.banner-conversation'),
+      conversationHead = bannerConversation.find('.conversation-head'),
+      conversationName = conversationHead.find('.name'),
+      conversationWriting = conversationHead.find('.writing'),
+      conversationContainer = bannerConversation.find('.conversation-container'),
       messageTemplate = $('<div class="message hidden"></div>');
   
   function scrollConversationToBottom(){
@@ -131,7 +131,7 @@ var conversationData = [
     var delayTime = 0;
   
     var conversation = conversationData[currentConversation];
-  
+    console.log("conversationName : " + conversationName)
     conversationName.text(conversation.name);
   
     $.each(conversation.messages, function(messageIndex, message) {
