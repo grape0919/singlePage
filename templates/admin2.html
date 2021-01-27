@@ -28,7 +28,7 @@
                         </th>
                         {% for d in data.description_list %}
                             <td class="align-middle">
-                                <input class="form-control" type="text" value="{{d}}">
+                                <input class="form-control" name="desc{{ loop.index }}" type="text" value="{{d}}">
                             </td>
                         {% endfor %}
                         <td><div>
@@ -42,11 +42,11 @@
                 <form class="form-horizontal" action="insertDesc" method='POST'>
                     <tr>
                         <th>
-                            <input class="form-control" name="composition" type="text" maxlength="6"/>
+                            <input class="form-control" name="compos" type="text" maxlength="6"/>
                         </th>
                         <script type="text/javascript">
                             var tempString = "";
-                            for(var i = 0; i < 10; i++){
+                            for(var i = 1; i < 11; i++){
                                 tempString += "<td>\
                                     <input class=\"form-control\" type=\"text\" name=\"desc"+(i+1)+"\">\
                                 </td>" 

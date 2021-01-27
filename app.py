@@ -21,7 +21,7 @@ def root():
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
-    cur = g.db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID')
+    cur = g.db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
     rows = cur.fetchall()
     datas = []
     for r in rows:
@@ -88,17 +88,31 @@ def manager2():
 @app.route("/result", methods=['POST'])
 def result():
     if request.method == 'POST':
-        #temp = request.form['num']
         code = -1
         code = request.form['code']
         print( "code =", code)
-        cur = g.db.cursor().execute(f'SELECT CODE, COM_NUMBER, COM_ID FROM NUMBER_CODE WHERE CODE = {code}')
+        cur = g.db.cursor().execute(f'''SELECT B.DESCRIPT FROM NUMBER_CODE A
+LEFT JOIN DESCRIPTION B ON B.COM_ID = A.COM_ID
+WHERE A.CODE = {code}
+ORDER BY A.COM_NUMBER, B.DESC_ID''')
         rows = cur.fetchall()
-        for row in rows:
-            cur = g.db.cursor().execute(f'SELECT COM_NM FROM COMPOSITION WHERE CODE = {code}')
+        tempString=''
+        if rows :
+            tempString = '[{name: \'TEST_NAME\',avatar: null,messages: ['
+            for i, row in enumerate(rows):
+                if i != 0:
+                    tempString = tempString + ','
+                tempString = tempString + '{message: \'' + str(row[0]) + '\',sender: false}'
+
+            tempString = tempString + ']}];'
+            print("result data : ", tempString)
+
+            f = open(f'static/js/{code}.js','w')
+        
+        return render_template("result.html", resultString=tempString, wrongway=False)
     else:
         rows = []
-    return render_template("result.html", datas=rows)
+        return render_template("result.html", wrongway=True)
 
 @app.route("/deleteCode", methods=['POST'])
 def deleteCode():
@@ -130,7 +144,7 @@ def insertCode():
         print(request.form)
         code = request.form['code']
         compos_list = []
-        for i in range(10):
+        for i in range(1,11):
             try:
                 compos_list.append(request.form['compos'+str(i)])
             except KeyError:
@@ -150,18 +164,35 @@ def insertDesc():
     if request.method == 'POST':
         print(request.form)
         compos = request.form['compos']
-        compos_list = []
-        for i in range(10):
+        desc_list = []
+        for i in range(1,11):
             try:
-                compos_list.append(request.form['compos'+str(i)])
+                desc_list.append(request.form['desc'+str(i)])
             except KeyError:
                 print("[WARN] It Does not exists key")
 
-        if code and not '' == code:
-            for i, compos in enumerate(compos_list):
-                if compos != '':
-                    # g.db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{i}+1,(select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'))')
-                    # g.db.commit()
+        if compos and not '' == compos:
+            for i, desc in enumerate(desc_list):
+                if desc != '':
+                    cur = g.db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
+                    row = cur.fetchall()
+                    print('!@#!@# row : ', row)
+                    if row:
+                        row = row[0][0]
+                        g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row},{i}+1,\'{desc}\')')
+                        g.db.commit()
+                    else:
+                        cur = g.db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
+                        row = cur.fetchall()
+                        print('!@#!@# maxid : ', row)
+                        if row:
+                            row = row[0][0]
+                            g.db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row}+1,\'{compos}\')')
+                            g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row}+1,{i}+1,\'{desc}\')')
+                            g.db.commit()
+                        else:
+                            g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
+                            g.db.commit()
                     pass
 
     return redirect("/manager2")

@@ -16,7 +16,7 @@
         <table class="table table-striped table-dark">
             <thead >
                 <tr>
-                    <th scope="col">코드</th>
+                    <th scope="col" style="width:7%">코드</th>
                     <script type="text/javascript">
                         var i;
                         var thString = "";
@@ -25,7 +25,7 @@
                         }
                         document.write(thString);
                     </script>
-                    <th style="width:8%"></th>
+                    <th style="width:10%"></th>
                 </tr>
             </thead>
             <tbody>
@@ -38,7 +38,7 @@
                         </th>
                         {% for d in data.composition_list %}
                             <td class="align-middle">
-                                <select class="form-control" value="{{d}}">
+                                <select class="form-control" name="compos{{loop.index}}" value="{{d}}">
                                     <option value="" selected disabled hidden >선택해주세요.</option>
                                     {% for option in options %}
                                         <option {% if d == option %}selected{% endif %}>{{option}}</option>
@@ -61,7 +61,7 @@
                         </th>
                         <script type="text/javascript">
                             var tempString = "";
-                            for(var i = 0; i < 10; i++){
+                            for(var i = 1; i < 11; i++){
                                 tempString += "<td>\
                                 <select class=\"form-control\" name=\"compos"+i+"\">\
                                     <option value=\"\" selected disabled hidden >선택해주세요.</option>\
