@@ -3,7 +3,12 @@ import sqlite3
 from contextlib import closing
 from src.data.CodeData import CodeData
 from src.data.CompositionData import CompositionData
+from log.Logger import Logger
+
+
 app = Flask(__name__)
+
+
 
 DATABASE = 'rdbms/example.db'
 
@@ -21,6 +26,7 @@ def root():
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
+    Logger.info("Entered manager1")
     cur = g.db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
     rows = cur.fetchall()
     datas = []
@@ -30,16 +36,11 @@ def manager1(): #숫자코드 - 구분 등록/삭제
         for d in datas:
             if r[0] == d.code:
                 check = True
-                print('r1 : ', r[1])
-                print('r2 : ', r[2])
                 d.addComposition(r[1],r[2])
                 break
 
         if not check:
-            print("new codeData")
             codeData = CodeData(r[0])
-            print(codeData.code)
-            print(codeData.composition_list)
             codeData.addComposition(r[1],r[2])
             datas.append(codeData)
             
@@ -47,7 +48,6 @@ def manager1(): #숫자코드 - 구분 등록/삭제
     for d in datas:
         result_data.append(d.getSpreadData())
 
-    print(result_data)
     cur = g.db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
@@ -56,6 +56,7 @@ def manager1(): #숫자코드 - 구분 등록/삭제
      
 @app.route("/manager2")
 def manager2():
+    Logger.info("Entered manager2")
     cur = g.db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
     rows = cur.fetchall()
     datas = []
@@ -65,15 +66,11 @@ def manager2():
         for d in datas:
             if r[0] == d.composition:
                 check = True
-                print('r1 : ', r[1])
-                print('r2 : ', r[2])
                 d.addDescription(r[1],r[2])
                 break
 
         if not check:
             composData = CompositionData(r[0])
-            print(composData.composition)
-            print(composData.description_list)
             composData.addDescription(r[1],r[2])
             datas.append(composData)
             
@@ -81,18 +78,14 @@ def manager2():
     for d in datas:
         result_data.append(d.getSpreadData())
 
-    print(result_data)
-
     return render_template("admin2.html", datas = datas, layout=2)
 
 @app.route("/result", methods=['POST'])
 def result():
-    print("start result")
-    print(request)
+    Logger.info("Result Chat Page")
     if request.method == 'POST':
         code = -1
         code = request.form['code']
-        print( "code =", code)
         cur = g.db.cursor().execute(f'''SELECT B.DESCRIPT FROM NUMBER_CODE A
 LEFT JOIN DESCRIPTION B ON B.COM_ID = A.COM_ID
 WHERE A.CODE = {code}
@@ -107,7 +100,6 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
                 tempString = tempString + '{message: \'' + str(row[0]) + '\',sender: false}'
 
             tempString = tempString + ',{message: \'\',sender: false}]}];'
-            print("result data : ", tempString)
         
         return render_template("result.html", resultString=tempString, wrongway=False)
     else:
@@ -116,7 +108,8 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
 
 @app.route("/deleteCode", methods=['POST'])
 def deleteCode():
-    print("deleteCode")
+    Logger.info("deleteCode")
+    Logger.info(str(request.form))
     if request.method == 'POST':
         code = request.form['code']
         if code:
@@ -127,7 +120,8 @@ def deleteCode():
 
 @app.route("/deleteDesc", methods=['POST'])
 def deleteDesc():
-    print("deleteDesc")
+    Logger.info("deleteDesc")
+    Logger.info(str(request.form))
     if request.method == 'POST':
         code = request.form['code']
         if code:
@@ -139,16 +133,16 @@ def deleteDesc():
 
 @app.route("/insertCode", methods=['POST'])
 def insertCode():
-    print("insertCode")
+    Logger.info("insertCode")
+    Logger.info(str(request.form))
     if request.method == 'POST':
-        print(request.form)
         code = request.form['code']
         compos_list = []
         for i in range(1,11):
             try:
                 compos_list.append(request.form['compos'+str(i)])
             except KeyError:
-                print("[WARN] It Does not exists key")
+                Logger.info("[WARN] It Does not exists key")
 
         if code and not '' == code:
             for i, compos in enumerate(compos_list):
@@ -160,16 +154,16 @@ def insertCode():
 
 @app.route("/insertDesc", methods=['POST'])
 def insertDesc():
-    print("insertDesc")
+    Logger.info("insertDesc")
+    Logger.info(str(request.form))
     if request.method == 'POST':
-        print(request.form)
         compos = request.form['compos']
         desc_list = []
         for i in range(1,11):
             try:
                 desc_list.append(request.form['desc'+str(i)])
             except KeyError:
-                print("[WARN] It Does not exists key")
+                Logger.info("[WARN] It Does not exists key")
 
         if compos and not '' == compos:
             for i, desc in enumerate(desc_list):
@@ -195,10 +189,10 @@ def insertDesc():
 
 @app.route("/checkCode", methods=['POST'])
 def checkCode():
-    print("start checkCode")
+    Logger.info("checkCode")
+    Logger.info(str(request.form))
     check = False
     if request.method == 'POST':
-        print(request.form)
         code = request.form['code']
         cur = g.db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
         row = cur.fetchall()
