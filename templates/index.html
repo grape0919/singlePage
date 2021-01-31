@@ -3,43 +3,81 @@
     <head>
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
         <script type="text/javascript">
+            function getResult(number){
+                var form = document.createElement("form");
+                var parm = new Array();
+                var input = new Array();
+
+                form.action = "result";
+                form.method = "POST";
+
+                parm.push( ['code', number] );
+                for (var i = 0; i < parm.length; i++) {
+                    input[i] = document.createElement("input");
+                    input[i].setAttribute("type", "hidden");
+                    input[i].setAttribute('name', parm[i][0]);
+                    input[i].setAttribute("value", parm[i][1]);
+                    form.appendChild(input[i]);
+                }
+                document.body.appendChild(form);
+                form.submit();
+            }
+
             function sum_number(){
-                var number = document.getElementById("number").value;
+                const number = document.getElementById("number").value;
                 var msg = "";
-                var sum = number;
-                if(number.length != 8){
-                    msg = "* 8자리 숫자를 입력해주세요.";
+                var number_str = number.toString();
+                if(number.length != 6){
+                    msg = "* 6자리 숫자를 입력해주세요.";
                     document.getElementById("result_msg").innerText = msg;
                     document.getElementById("result_msg").style = "color: red;";
                     console.log(msg)
                     return;
                 }
 
-                do{
-                    number = sum.toString();
-                    console.log(typeof number)
-                    sum = 0;
-                    console.log("num = " + number);
-                    for(var i = 0; i < number.length; i++){
-                        var n = Number(number[i]);
-                        sum += n;
-                        if(isNaN(n)){
-                            msg="* 올바른 숫자를 입력해주세요.";
-                            document.getElementById("result_msg").innerText = msg;
-                            document.getElementById("result_msg").style = "color: red;";
-                            return ;
+                //숫자 인지 체크
+                for(var i = 0; i < number_str.length; i++){
+                    var n = Number(number_str[i]);
+                    if(isNaN(n)){
+                        msg="* 올바른 숫자를 입력해주세요.";
+                        document.getElementById("result_msg").innerText = msg;
+                        document.getElementById("result_msg").style = "color: red;";
+                        return ;
+                    }
+                }
+
+                //존재하는 숫자인지 체크
+                var request = new XMLHttpRequest(); 
+                request.onreadystatechange = function() {
+                    if (request.readyState == XMLHttpRequest.DONE) {
+                        var json = JSON.parse(request.responseText);
+                        console.log(json);
+                        
+                        var check = false;
+                        check = json.check;
+                        if(!check){
+                            msg="* 일치하는 코드가 없습니다.";
+                                document.getElementById("result_msg").innerText = msg;
+                                document.getElementById("result_msg").style = "color: red;";
+                                return ;
+                        }else{
+                            document.getElementById("result_msg").innerText = "* 결과가 나왔습니다.";
+                            document.getElementById("result_msg").style = "color: green;";
+                            document.getElementById("result_button").text = "결과보기";
+                            document.getElementById("result_button").type = "submit";
+                            document.getElementById("result_button").style = "background-color:orange;";
+                            
+                            document.getElementById("result_button").onclick = getResult(number);
                         }
                     }
-                    console.log("sum = " + sum);
-                }while(sum > 9);
+                }
+                var url = 'checkCode';
 
-                document.getElementById("result_msg").innerText = "* 결과가 나왔습니다.";
-                document.getElementById("result_msg").style = "color: green;";
-                document.getElementById("result_button").text = "결과보기";
-                document.getElementById("result_button").type = "submit";
-                document.getElementById("result_button").style = "background-color:orange;";
-                console.log(sum);
-                document.getElementById("result_button").onclick = function() { location.href=sum+".html"}
+                request.open("POST",url,true);
+                var data = new FormData();
+                data.append("code", number);
+                request.send(data);
+                
             }
         </script>
     </head>
@@ -50,15 +88,13 @@
         </div>
         <div class="main">
             <div style="text-align:center;">
-                <form action="result" method='POST'>
-                <p style="width:300px">숫자 8자리를 입력해주세요</p>
-                <input id="number" name="code" type="text" maxlength="8"/>
-                <p>ex) 29090802</p>
+                <p style="width:300px">숫자 6자리를 입력해주세요</p>
+                <input id="number" name="code" type="text" maxlength="6"/>
+                <p>ex) 290908</p>
                 <div id="result">
                     <p id="result_msg" style="color:blue;">* 숫자를 입력후 버튼을 클릭하세요.</p>
                     <button id="result_button" onclick="sum_number()" >입력</button>
                 <div>
-                <form>
             <div>
         <div>
     </body>

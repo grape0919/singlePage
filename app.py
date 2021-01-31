@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template, request, redirect
+from flask import Flask, g, render_template, request, redirect, jsonify
 import sqlite3
 from contextlib import closing
 from src.data.CodeData import CodeData
@@ -52,7 +52,7 @@ def manager1(): #숫자코드 - 구분 등록/삭제
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
 
-    return render_template("admin1.html", datas = datas, options=rows)
+    return render_template("admin1.html", datas = datas, options=rows, layout=1)
      
 @app.route("/manager2")
 def manager2():
@@ -83,10 +83,12 @@ def manager2():
 
     print(result_data)
 
-    return render_template("admin2.html", datas = datas)
+    return render_template("admin2.html", datas = datas, layout=2)
 
 @app.route("/result", methods=['POST'])
 def result():
+    print("start result")
+    print(request)
     if request.method == 'POST':
         code = -1
         code = request.form['code']
@@ -104,10 +106,8 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
                     tempString = tempString + ','
                 tempString = tempString + '{message: \'' + str(row[0]) + '\',sender: false}'
 
-            tempString = tempString + ']}];'
+            tempString = tempString + ',{message: \'\',sender: false}]}];'
             print("result data : ", tempString)
-
-            f = open(f'static/js/{code}.js','w')
         
         return render_template("result.html", resultString=tempString, wrongway=False)
     else:
@@ -176,26 +176,37 @@ def insertDesc():
                 if desc != '':
                     cur = g.db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
                     row = cur.fetchall()
-                    print('!@#!@# row : ', row)
                     if row:
                         row = row[0][0]
                         g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row},{i}+1,\'{desc}\')')
-                        g.db.commit()
                     else:
                         cur = g.db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
                         row = cur.fetchall()
-                        print('!@#!@# maxid : ', row)
                         if row:
                             row = row[0][0]
                             g.db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row}+1,\'{compos}\')')
                             g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row}+1,{i}+1,\'{desc}\')')
-                            g.db.commit()
                         else:
                             g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
-                            g.db.commit()
-                    pass
+                            
+                    g.db.commit()
 
     return redirect("/manager2")
+
+@app.route("/checkCode", methods=['POST'])
+def checkCode():
+    print("start checkCode")
+    check = False
+    if request.method == 'POST':
+        print(request.form)
+        code = request.form['code']
+        cur = g.db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
+        row = cur.fetchall()
+
+        if len(row) != 0 :
+            check = True
+
+    return jsonify({'check' : check}), 200
 
 def connect_db():
     return sqlite3.connect(DATABASE)
