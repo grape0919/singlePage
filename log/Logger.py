@@ -1,5 +1,6 @@
 import logging
 import datetime
+import os
 
 class Logger():
     mylogger = logging.getLogger("SinglePageLogger")
@@ -11,7 +12,7 @@ class Logger():
     stream_hander.setFormatter(formatter)
     mylogger.addHandler(stream_hander)
 
-    file_handler = logging.FileHandler('./log/nohup.log', encoding="utf-8")
+    file_handler = logging.FileHandler(os.path.dirname(os.path.abspath(__file__))+'/nohup.log', encoding="utf-8")
     mylogger.addHandler(file_handler)
 
 

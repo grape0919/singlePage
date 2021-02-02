@@ -1,6 +1,0 @@
-[2021-01-31 23:31:11.883529] Entered manager1
-[2021-01-31 23:31:17.875064] deleteCode
-[2021-01-31 23:31:17.940852] Entered manager1
-[2021-01-31 23:31:42.355041] deleteCode
-[2021-01-31 23:31:42.364256] ImmutableMultiDict([('code', '222222'), ('compos1', 'AG'), ('compos2', 'AG'), ('compos3', 'AG'), ('compos4', 'AG')])
-[2021-01-31 23:31:42.486683] Entered manager1
