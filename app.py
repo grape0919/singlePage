@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 
 
-DATABASE = 'rdbms/example.db'
+DATABASE = './rdbms/example.db'
 
 @app.before_request
 def before_request():
