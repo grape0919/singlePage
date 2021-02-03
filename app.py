@@ -3,22 +3,27 @@ import sqlite3
 from contextlib import closing
 from src.data.CodeData import CodeData
 from src.data.CompositionData import CompositionData
-from log.Logger import Logger
-
+# from log.Logger import Logger
+import os
 
 app = Flask(__name__)
 
 
+PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
-DATABASE = './rdbms/example.db'
+DATABASE = os.path.join(PROJECT_ROOT,'rdbms','example.db')
+db = None
 
-@app.before_request
-def before_request():
-    g.db = connect_db()
+def connect_db():
+    return sqlite3.connect(DATABASE)
+#@app.before_request
+#def before_request():
+db = connect_db()
 
-@app.teardown_request
-def teardown_request(exception):
-    g.db.close()
+#@app.teardown_request
+#def teardown_request(exception):
+#    if db != None:
+#        db.close()
 
 @app.route("/")
 def root():
@@ -26,8 +31,8 @@ def root():
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
-    Logger.info("Entered manager1")
-    cur = g.db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
+    print("Entered manager1")
+    cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
     rows = cur.fetchall()
     datas = []
     for r in rows:
@@ -48,7 +53,7 @@ def manager1(): #숫자코드 - 구분 등록/삭제
     for d in datas:
         result_data.append(d.getSpreadData())
 
-    cur = g.db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
+    cur = db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
 
@@ -56,8 +61,8 @@ def manager1(): #숫자코드 - 구분 등록/삭제
      
 @app.route("/manager2")
 def manager2():
-    Logger.info("Entered manager2")
-    cur = g.db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
+    print("Entered manager2")
+    cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
     rows = cur.fetchall()
     datas = []
     for r in rows:
@@ -82,11 +87,11 @@ def manager2():
 
 @app.route("/result", methods=['POST'])
 def result():
-    Logger.info("Result Chat Page")
+    print("Result Chat Page")
     if request.method == 'POST':
         code = -1
         code = request.form['code']
-        cur = g.db.cursor().execute(f'''SELECT B.DESCRIPT FROM NUMBER_CODE A
+        cur = db.cursor().execute(f'''SELECT B.DESCRIPT FROM NUMBER_CODE A
 LEFT JOIN DESCRIPTION B ON B.COM_ID = A.COM_ID
 WHERE A.CODE = {code}
 ORDER BY A.COM_NUMBER, B.DESC_ID''')
@@ -108,33 +113,33 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
 
 @app.route("/deleteCode", methods=['POST'])
 def deleteCode():
-    Logger.info("deleteCode")
-    Logger.info(str(request.form))
+    print("deleteCode")
+    print(str(request.form))
     if request.method == 'POST':
         code = request.form['code']
         if code:
-            g.db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
-            g.db.commit()
+            db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
+            db.commit()
 
     return redirect("/manager1")
 
 @app.route("/deleteDesc", methods=['POST'])
 def deleteDesc():
-    Logger.info("deleteDesc")
-    Logger.info(str(request.form))
+    print("deleteDesc")
+    print(str(request.form))
     if request.method == 'POST':
         code = request.form['code']
         if code:
-            # g.db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
-            # g.db.commit()
+            # db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
+            # db.commit()
             pass
 
     return redirect("/manager2")
 
 @app.route("/insertCode", methods=['POST'])
 def insertCode():
-    Logger.info("insertCode")
-    Logger.info(str(request.form))
+    print("insertCode")
+    print(str(request.form))
     if request.method == 'POST':
         code = request.form['code']
         compos_list = []
@@ -142,20 +147,20 @@ def insertCode():
             try:
                 compos_list.append(request.form['compos'+str(i)])
             except KeyError:
-                Logger.info("[WARN] It Does not exists key")
+                print("[WARN] It Does not exists key")
 
         if code and not '' == code:
             for i, compos in enumerate(compos_list):
                 if compos != '':
-                    g.db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{i}+1,(select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'))')
-                    g.db.commit()
+                    db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{i}+1,(select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'))')
+                    db.commit()
 
     return redirect("/manager1")
 
 @app.route("/insertDesc", methods=['POST'])
 def insertDesc():
-    Logger.info("insertDesc")
-    Logger.info(str(request.form))
+    print("insertDesc")
+    print(str(request.form))
     if request.method == 'POST':
         compos = request.form['compos']
         desc_list = []
@@ -163,47 +168,44 @@ def insertDesc():
             try:
                 desc_list.append(request.form['desc'+str(i)])
             except KeyError:
-                Logger.info("[WARN] It Does not exists key")
+                print("[WARN] It Does not exists key")
 
         if compos and not '' == compos:
             for i, desc in enumerate(desc_list):
                 if desc != '':
-                    cur = g.db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
+                    cur = db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
                     row = cur.fetchall()
                     if row:
                         row = row[0][0]
-                        g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row},{i}+1,\'{desc}\')')
+                        db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row},{i}+1,\'{desc}\')')
                     else:
-                        cur = g.db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
+                        cur = db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
                         row = cur.fetchall()
                         if row:
                             row = row[0][0]
-                            g.db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row}+1,\'{compos}\')')
-                            g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row}+1,{i}+1,\'{desc}\')')
+                            db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row}+1,\'{compos}\')')
+                            db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row}+1,{i}+1,\'{desc}\')')
                         else:
-                            g.db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
+                            db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
                             
-                    g.db.commit()
+                    db.commit()
 
     return redirect("/manager2")
 
 @app.route("/checkCode", methods=['POST'])
 def checkCode():
-    Logger.info("checkCode")
-    Logger.info(str(request.form))
+    print("checkCode")
+    print(str(request.form))
     check = False
     if request.method == 'POST':
         code = request.form['code']
-        cur = g.db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
+        cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
         row = cur.fetchall()
 
         if len(row) != 0 :
             check = True
 
     return jsonify({'check' : check}), 200
-
-def connect_db():
-    return sqlite3.connect(DATABASE)
 
 def init_db():
     with closing(connect_db()) as db:
