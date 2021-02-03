@@ -12,13 +12,10 @@ app = Flask(__name__)
 PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 DATABASE = os.path.join(PROJECT_ROOT,'rdbms','example.db')
-db = None
-
 def connect_db():
     return sqlite3.connect(DATABASE)
 #@app.before_request
 #def before_request():
-db = connect_db()
 
 #@app.teardown_request
 #def teardown_request(exception):
@@ -31,6 +28,7 @@ def root():
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
+    db = connect_db()
     print("Entered manager1")
     cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
     rows = cur.fetchall()
@@ -56,12 +54,13 @@ def manager1(): #숫자코드 - 구분 등록/삭제
     cur = db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
-
+    db.close()
     return render_template("admin1.html", datas = datas, options=rows, layout=1)
      
 @app.route("/manager2")
 def manager2():
     print("Entered manager2")
+    db = connect_db()
     cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
     rows = cur.fetchall()
     datas = []
@@ -88,6 +87,7 @@ def manager2():
 @app.route("/result", methods=['POST'])
 def result():
     print("Result Chat Page")
+    db = connect_db()
     if request.method == 'POST':
         code = -1
         code = request.form['code']
@@ -105,41 +105,45 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
                 tempString = tempString + '{message: \'' + str(row[0]) + '\',sender: false}'
 
             tempString = tempString + ',{message: \'\',sender: false}]}];'
-        
+        db.close()
         return render_template("result.html", resultString=tempString, wrongway=False)
     else:
         rows = []
+        db.close()
         return render_template("result.html", wrongway=True)
 
 @app.route("/deleteCode", methods=['POST'])
 def deleteCode():
     print("deleteCode")
     print(str(request.form))
+    db = connect_db()
     if request.method == 'POST':
         code = request.form['code']
         if code:
             db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
             db.commit()
-
+    db.close()
     return redirect("/manager1")
 
 @app.route("/deleteDesc", methods=['POST'])
 def deleteDesc():
     print("deleteDesc")
     print(str(request.form))
+    db = connect_db()
     if request.method == 'POST':
         code = request.form['code']
         if code:
             # db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
             # db.commit()
             pass
-
+    db.close()
     return redirect("/manager2")
 
 @app.route("/insertCode", methods=['POST'])
 def insertCode():
     print("insertCode")
     print(str(request.form))
+    db = connect_db()
     if request.method == 'POST':
         code = request.form['code']
         compos_list = []
@@ -154,13 +158,14 @@ def insertCode():
                 if compos != '':
                     db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{i}+1,(select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'))')
                     db.commit()
-
+    db.close()
     return redirect("/manager1")
 
 @app.route("/insertDesc", methods=['POST'])
 def insertDesc():
     print("insertDesc")
     print(str(request.form))
+    db = connect_db()
     if request.method == 'POST':
         compos = request.form['compos']
         desc_list = []
@@ -189,13 +194,14 @@ def insertDesc():
                             db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
                             
                     db.commit()
-
+    db.close()
     return redirect("/manager2")
 
 @app.route("/checkCode", methods=['POST'])
 def checkCode():
     print("checkCode")
     print(str(request.form))
+    db = connect_db()
     check = False
     if request.method == 'POST':
         code = request.form['code']
@@ -204,7 +210,7 @@ def checkCode():
 
         if len(row) != 0 :
             check = True
-
+    db.close()
     return jsonify({'check' : check}), 200
 
 def init_db():
