@@ -131,10 +131,18 @@ def deleteDesc():
     print(str(request.form))
     db = connect_db()
     if request.method == 'POST':
-        code = request.form['code']
-        if code:
-            # db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
-            # db.commit()
+        compos = request.form['compos']
+        if compos:
+            cur = db.cursor().execute(f'SELECT COM_ID FROM COMPOSITION WHERE COM_NM = \'{compos}\'')
+            rows = cur.fetchall()
+            print(rows)
+            if(len(rows) > 0):
+                com_id = rows[0][0]
+
+                db.cursor().execute(f'DELETE FROM DESCRIPTION WHERE COM_ID = {com_id}')
+                db.cursor().execute(f'DELETE FROM COMPOSITION WHERE COM_ID = {com_id}')
+                
+                db.commit()
             pass
     db.close()
     return redirect("/manager2")
@@ -224,7 +232,7 @@ def init_db():
 
 
 if __name__ == '__main__':
-    pass
+    # pass
     # url = 'http://localhost'
     #  webbrowser.open(url)
-    # app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
