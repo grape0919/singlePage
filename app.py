@@ -221,7 +221,7 @@ def checkCode():
     db.close()
     return jsonify({'check' : check}), 200
 
-@app.route("/upload",methods=['POST'])
+@app.route("/manager/upload",methods=['POST'])
 def upload():
     print("upload")
     print(request.form)
@@ -232,6 +232,7 @@ def upload():
     db.close()
 
     if request.form['exampleRadios'] == 'option1':
+        
         return redirect("/manager1")
     else :
         return redirect("/manager2")

@@ -27,8 +27,8 @@
                 const number = document.getElementById("number").value;
                 var msg = "";
                 var number_str = number.toString();
-                if(number.length != 6){
-                    msg = "* 6자리 숫자를 입력해주세요.";
+                if(number.length > 8 || number.length < 4){
+                    msg = "* 4~8자리 숫자를 입력해주세요.";
                     document.getElementById("result_msg").innerText = msg;
                     document.getElementById("result_msg").style = "color: red;";
                     console.log(msg)
@@ -88,8 +88,8 @@
         </div>
         <div class="main">
             <div style="text-align:center;">
-                <p style="width:300px">숫자 6자리를 입력해주세요</p>
-                <input id="number" name="code" type="text" maxlength="6"/>
+                <p style="width:300px">숫자 4~8자리를 입력해주세요</p>
+                <input id="number" name="code" type="text" minlength="4" maxlength="8"/>
                 <p>ex) 290908</p>
                 <div id="result">
                     <p id="result_msg" style="color:blue;">* 숫자를 입력후 버튼을 클릭하세요.</p>
