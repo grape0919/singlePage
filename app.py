@@ -221,6 +221,28 @@ def checkCode():
     db.close()
     return jsonify({'check' : check}), 200
 
+@app.route("/upload",methods=['POST'])
+def upload():
+    print("upload")
+    print(request.form)
+    db = connect_db()
+    if request.method == 'POST':
+        print(request.form[0])
+        
+        f = request.files['file']
+        excelUpload(f)
+    db.close()
+
+    if request.form['exapleRadios'] == 'option1':
+        return redirect("/manager1")
+    else :
+        return redirect("/manager2")
+
+    
+
+def excelUpload(excelFile):
+    print(excelFile.filename)
+
 def init_db():
     with closing(connect_db()) as db:
         with app.open_resource('rdbms/0.DROP_TABLES.sql') as f:
