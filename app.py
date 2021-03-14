@@ -227,13 +227,11 @@ def upload():
     print(request.form)
     db = connect_db()
     if request.method == 'POST':
-        print(request.form[0])
-        
         f = request.files['file']
         excelUpload(f)
     db.close()
 
-    if request.form['exapleRadios'] == 'option1':
+    if request.form['exampleRadios'] == 'option1':
         return redirect("/manager1")
     else :
         return redirect("/manager2")
