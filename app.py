@@ -1,10 +1,13 @@
-from flask import Flask, g, render_template, request, redirect, jsonify
+from flask import Flask, g, render_template, request, redirect, jsonify, session
 import sqlite3
 from contextlib import closing
 from src.data.CodeData import CodeData
 from src.data.CompositionData import CompositionData
 # from log.Logger import Logger
 import os
+
+from io import BytesIO
+from openpyxl import load_workbook
 
 app = Flask(__name__)
 
@@ -24,7 +27,28 @@ def connect_db():
 
 @app.route("/")
 def root():
-    return render_template("index.html")
+    if not session.get("login"):
+        return redirect("/login")
+    else :
+        return render_template("index.html")
+
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
+@app.route("/loginCheck", methods=["POST"])
+def loginCheck():
+    db = connect_db()
+    if request.method == 'POST':
+        # user = request.form['user']
+        print("!@#!@# request.form:", request.form)
+        password = request.form['password']
+        print(password)
+        cur = db.cursor().execute('SELECT * from USER where user')
+        rows = cur.fetchall()
+        print(rows)
+    db.close()
+    pass
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
@@ -241,6 +265,7 @@ def upload():
 
 def excelUpload(excelFile):
     print(excelFile.filename)
+    load_workbook(filename=BytesIO(excelFile))
 
 def init_db():
     with closing(connect_db()) as db:
