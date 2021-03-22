@@ -1,6 +1,8 @@
 from flask import Flask, g, render_template, request, redirect, jsonify, session
 import sqlite3
 from contextlib import closing
+
+from flask.signals import template_rendered
 from src.data.CodeData import CodeData
 from src.data.CompositionData import CompositionData
 # from log.Logger import Logger
@@ -27,10 +29,7 @@ def connect_db():
 
 @app.route("/")
 def root():
-    if not session.get("login"):
-        return redirect("/login")
-    else :
-        return render_template("index.html")
+    return render_template("index.html")
 
 @app.route("/login")
 def login():
@@ -38,75 +37,103 @@ def login():
 
 @app.route("/loginCheck", methods=["POST"])
 def loginCheck():
+    if session.get("login"):
+        print(session.get('login'), "에 이미 로그인 되어 있습니다.")
+        return redirect("/")
     db = connect_db()
     if request.method == 'POST':
         # user = request.form['user']
-        print("!@#!@# request.form:", request.form)
         password = request.form['password']
         print(password)
-        cur = db.cursor().execute('SELECT * from USER where user')
+        cur = db.cursor().execute("SELECT PWD from USER where id='admin'")
         rows = cur.fetchall()
         print(rows)
+        if 1 == len(rows):
+            pwd = rows[0][0]
+            if pwd == password:
+                print("로그인 성공")
+                
+                ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                print("ip = ", ip)
+                session["login"] = ip
+                return redirect("manager1")
+            else:
+                print("로그인 실패")
+                return template_rendered("failedLogin.html")
+        else:
+            print("로그인 실패")
+            return template_rendered("failedLogin.html")
+
     db.close()
-    pass
+
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
-    db = connect_db()
-    print("Entered manager1")
-    cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
-    rows = cur.fetchall()
-    datas = []
-    for r in rows:
-        check = False
+    if not session.get("login"):
+        return redirect("/login")
+    else :
+        db = connect_db()
+        print("Entered manager1")
+        cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
+        rows = cur.fetchall()
+        datas = []
+        for r in rows:
+            check = False
 
+            for d in datas:
+                if r[0] == d.code:
+                    check = True
+                    d.addComposition(r[1],r[2])
+                    break
+
+            if not check:
+                codeData = CodeData(r[0])
+                codeData.addComposition(r[1],r[2])
+                datas.append(codeData)
+                
+        result_data = []
         for d in datas:
-            if r[0] == d.code:
-                check = True
-                d.addComposition(r[1],r[2])
-                break
+            result_data.append(d.getSpreadData())
 
-        if not check:
-            codeData = CodeData(r[0])
-            codeData.addComposition(r[1],r[2])
-            datas.append(codeData)
-            
-    result_data = []
-    for d in datas:
-        result_data.append(d.getSpreadData())
-
-    cur = db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
-    rows = cur.fetchall()
-    rows = [r[0] for r in rows]
-    db.close()
-    return render_template("admin1.html", datas = datas, options=rows, layout=1)
+        cur = db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
+        rows = cur.fetchall()
+        rows = [r[0] for r in rows]
+        db.close()
+        return render_template("admin1.html", datas = datas, options=rows, layout=1)
      
 @app.route("/manager2")
 def manager2():
-    print("Entered manager2")
-    db = connect_db()
-    cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
-    rows = cur.fetchall()
-    datas = []
-    for r in rows:
-        check = False
+    if not session.get("login"):
+        return redirect("/login")
+    else :
+        print("Entered manager2")
+        db = connect_db()
+        cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
+        rows = cur.fetchall()
+        datas = []
+        for r in rows:
+            check = False
 
+            for d in datas:
+                if r[0] == d.composition:
+                    check = True
+                    d.addDescription(r[1],r[2])
+                    break
+
+            if not check:
+                composData = CompositionData(r[0])
+                composData.addDescription(r[1],r[2])
+                datas.append(composData)
+                
+        result_data = []
         for d in datas:
-            if r[0] == d.composition:
-                check = True
-                d.addDescription(r[1],r[2])
-                break
+            result_data.append(d.getSpreadData())
 
-        if not check:
-            composData = CompositionData(r[0])
-            composData.addDescription(r[1],r[2])
-            datas.append(composData)
-            
-    result_data = []
-    for d in datas:
-        result_data.append(d.getSpreadData())
+        return render_template("admin2.html", datas = datas, layout=2)
 
-    return render_template("admin2.html", datas = datas, layout=2)
+@app.route("/manager3")
+def manager3():
+    return render_template("admin3.html", layout=3)
 
 @app.route("/result", methods=['POST'])
 def result():
@@ -281,4 +308,6 @@ if __name__ == '__main__':
     # pass
     # url = 'http://localhost'
     #  webbrowser.open(url)
+    app.secret_key = 'hkdevstudio'
+    #app.config['SESSION_TYPE'] = 'filesystem'
     app.run(host='0.0.0.0', port=80, debug=True)

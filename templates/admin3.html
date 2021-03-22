@@ -1,0 +1,24 @@
+{% extends "adminLayout.html" %}
+{% block head %}
+    {{super()}}
+{% endblock %}
+{% block content %}
+        <div class="center-block mx-auto" style="width:300px; margin-top:100px">
+            <h3 class="text-center">관리자 정보 변경</h3>
+            <form class="p-4" action="/loginCheck" method="POST">
+                <div class="form-group">
+                    <label for="currentPassword">현재 비밀번호</label>
+                    <input type="password" name="curPwd" class="form-control" id="currentPassword" placeholder="Password">
+                </div>
+                <div class="form-group">
+                    <label for="changePassword1">변경할 비밀번호</label>
+                    <input type="password" name="cngPwd1" class="form-control" id="changePassword1" placeholder="Password">
+                </div>
+                <div class="form-group">
+                    <label for="changePassword2">변경할 비밀번호 확인</label>
+                    <input type="password" name="cngPwd2" class="form-control" id="changePassword2" placeholder="Password">
+                </div>
+                <button type="submit" class="btn btn-primary">확인</button>
+            </form>
+        </div>
+{% endblock %}
