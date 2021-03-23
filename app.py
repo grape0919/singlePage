@@ -1,6 +1,7 @@
-from flask import Flask, g, render_template, request, redirect, jsonify, session
+from flask import Flask, g, render_template, request, redirect, jsonify, session, flash
 import sqlite3
 from contextlib import closing
+from flask.globals import current_app
 
 from flask.signals import template_rendered
 from src.data.CodeData import CodeData
@@ -33,6 +34,9 @@ def root():
 
 @app.route("/login")
 def login():
+    if session.get("login"):
+        session.pop("login")
+        return redirect("/login")
     return render_template("login.html")
 
 @app.route("/loginCheck", methods=["POST"])
@@ -40,14 +44,16 @@ def loginCheck():
     if session.get("login"):
         print(session.get('login'), "에 이미 로그인 되어 있습니다.")
         return redirect("/")
-    db = connect_db()
     if request.method == 'POST':
+        db = connect_db()
         # user = request.form['user']
         password = request.form['password']
         print(password)
         cur = db.cursor().execute("SELECT PWD from USER where id='admin'")
         rows = cur.fetchall()
         print(rows)
+        
+        db.close()
         if 1 == len(rows):
             pwd = rows[0][0]
             if pwd == password:
@@ -58,14 +64,60 @@ def loginCheck():
                 session["login"] = ip
                 return redirect("manager1")
             else:
-                print("로그인 실패")
-                return template_rendered("failedLogin.html")
+                flash("로그인 실패")
+                return render_template("alertPage.html", redirect="/login")
         else:
-            print("로그인 실패")
-            return template_rendered("failedLogin.html")
+            flash("로그인 실패")
+            return render_template("alertPage.html", redirect="/login")
 
-    db.close()
 
+@app.route("/logout")
+def logout():
+    if session.get("login"):
+        session.pop("login")
+        flash("관리자 로그아웃 되었습니다.")
+        return render_template("alertPage.html", redirect="/login")
+    else:
+        return redirect("/login")
+
+@app.route("/cngAdmPwd", methods=['POST'])
+def cngAdmPwd():
+    if not session.get("login"):
+        return redirect("/login")
+    
+    if request.method == 'POST':
+        print(request.form)
+        curPwd = request.form['curPwd']
+        cngPwd1 = request.form['cngPwd1']
+        cngPwd2 = request.form['cngPwd2']
+        if len(cngPwd1) < 4 or len(cngPwd2) < 4:
+            flash("비밀번호는 4자리 이상이어야 합니다.")
+            return render_template("alertPage.html", redirect="/manager3")
+            
+        db = connect_db()
+        cur = db.cursor().execute("SELECT PWD from USER where id='admin'")
+        rows = cur.fetchall()
+        if 1 == len(rows):
+            pwd = rows[0][0]
+            if pwd == curPwd:
+                if cngPwd1 == cngPwd2:
+                    db.cursor().execute(f"UPDATE USER SET PWD={cngPwd2} where id='admin'")
+                    db.commit()
+                    db.close()
+                    flash("정상적으로 변경되었습니다. 다시 로그인해 주세요.")
+                    return render_template("alertPage.html", redirect="/login")
+                else:
+                    print("변경 비번 달라")
+                    db.close()
+                    flash("바꿀 비밀번호/확인이 다릅니다.")
+                    return render_template("alertPage.html", redirect="/manager3")
+            else:
+                print("현재 비번 달라")
+                db.close()
+                flash("현재 비밀번호가 틀렸습니다.")
+                return render_template("alertPage.html", redirect="/manager3")
+    else:
+        return redirect("/login")
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
@@ -110,6 +162,7 @@ def manager2():
         db = connect_db()
         cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
         rows = cur.fetchall()
+        db.close()
         datas = []
         for r in rows:
             check = False
@@ -138,8 +191,8 @@ def manager3():
 @app.route("/result", methods=['POST'])
 def result():
     print("Result Chat Page")
-    db = connect_db()
-    if request.method == 'POST':
+    if request.method == 'POST':     
+        db = connect_db()
         code = -1
         code = request.form['code']
         cur = db.cursor().execute(f'''SELECT B.DESCRIPT FROM NUMBER_CODE A
@@ -160,28 +213,27 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
         return render_template("result.html", resultString=tempString, wrongway=False)
     else:
         rows = []
-        db.close()
         return render_template("result.html", wrongway=True)
 
 @app.route("/deleteCode", methods=['POST'])
 def deleteCode():
     print("deleteCode")
     print(str(request.form))
-    db = connect_db()
-    if request.method == 'POST':
+    if request.method == 'POST':  
+        db = connect_db()
         code = request.form['code']
         if code:
             db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
             db.commit()
-    db.close()
+        db.close()
     return redirect("/manager1")
 
 @app.route("/deleteDesc", methods=['POST'])
 def deleteDesc():
     print("deleteDesc")
     print(str(request.form))
-    db = connect_db()
     if request.method == 'POST':
+        db = connect_db()
         compos = request.form['compos']
         if compos:
             cur = db.cursor().execute(f'SELECT COM_ID FROM COMPOSITION WHERE COM_NM = \'{compos}\'')
@@ -195,15 +247,15 @@ def deleteDesc():
                 
                 db.commit()
             pass
-    db.close()
+        db.close()
     return redirect("/manager2")
 
 @app.route("/insertCode", methods=['POST'])
 def insertCode():
     print("insertCode")
     print(str(request.form))
-    db = connect_db()
-    if request.method == 'POST':
+    if request.method == 'POST':  
+        db = connect_db()
         code = request.form['code']
         compos_list = []
         for i in range(1,11):
@@ -217,15 +269,15 @@ def insertCode():
                 if compos != '':
                     db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{i}+1,(select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'))')
                     db.commit()
-    db.close()
+        db.close()
     return redirect("/manager1")
 
 @app.route("/insertDesc", methods=['POST'])
 def insertDesc():
     print("insertDesc")
     print(str(request.form))
-    db = connect_db()
     if request.method == 'POST':
+        db = connect_db()
         compos = request.form['compos']
         desc_list = []
         for i in range(1,11):
@@ -253,34 +305,34 @@ def insertDesc():
                             db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
                             
                     db.commit()
-    db.close()
+        db.close()
     return redirect("/manager2")
 
 @app.route("/checkCode", methods=['POST'])
 def checkCode():
     print("checkCode")
     print(str(request.form))
-    db = connect_db()
     check = False
     if request.method == 'POST':
+        db = connect_db()
         code = request.form['code']
         cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
         row = cur.fetchall()
 
         if len(row) != 0 :
             check = True
-    db.close()
+        db.close()
     return jsonify({'check' : check}), 200
 
 @app.route("/manager/upload",methods=['POST'])
 def upload():
     print("upload")
     print(request.form)
-    db = connect_db()
     if request.method == 'POST':
+        db = connect_db()
         f = request.files['file']
         excelUpload(f)
-    db.close()
+        db.close()
 
     if request.form['exampleRadios'] == 'option1':
         

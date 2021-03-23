@@ -1,0 +1,12 @@
+{%with messages = get_flashed_messages()%}
+    {%if messages %}
+    <script type="text/javascript">
+        function warn(){
+            alert("{{messages[0]}}");
+            location.href = "{{redirect}}"
+        }
+    </script>
+    <body onload="warn()">
+    </body>
+    {%endif%}
+{%endwith%}
