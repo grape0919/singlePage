@@ -26,3 +26,6 @@ create table USER(
 	ID TEXT PRIMARY KEY,
 	PWD TEXT not null
 );
+
+INSERT INTO USER (ID, PWD)
+VALUES ('admin', '1111');
