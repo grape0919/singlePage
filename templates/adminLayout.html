@@ -35,6 +35,11 @@
                 }
             }
             var url = 'uploadFile';
+
+            function downloadTemplate(){
+                location.href = "manager/downloadTemplate"
+            }
+
         </script>
 
     {% endblock %}
@@ -114,8 +119,9 @@
                                 </div>
                         </div>
                         <div class="modal-footer">
+                            <button type="button" class="btn btn-light" onclick="downloadTemplate()">템플릿 다운로드</button>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
-                            <input type="submit" class="btn btn-primary" value="업로드" ></button>
+                            <input type="submit" class="btn btn-primary" value="업로드" />
                         </div>
                     </form>
                 </div>

@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template, request, redirect, jsonify, session, flash
+from flask import Flask, g, render_template, request, redirect, jsonify, session, flash, send_file
 import sqlite3
 from contextlib import closing
 from flask.globals import current_app
@@ -11,6 +11,8 @@ import os
 
 from io import BytesIO
 from openpyxl import load_workbook
+
+from werkzeug.datastructures import FileStorage
 
 app = Flask(__name__)
 
@@ -42,8 +44,7 @@ def login():
 @app.route("/loginCheck", methods=["POST"])
 def loginCheck():
     if session.get("login"):
-        print(session.get('login'), "에 이미 로그인 되어 있습니다.")
-        return redirect("/")
+        return redirect("/manager")
     if request.method == 'POST':
         db = connect_db()
         # user = request.form['user']
@@ -119,77 +120,85 @@ def cngAdmPwd():
     else:
         return redirect("/login")
 
+@app.route("/manager")
+def manager():
+    return redirect("/manager1")
+
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
     if not session.get("login"):
         return redirect("/login")
-    else :
-        db = connect_db()
-        print("Entered manager1")
-        cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
-        rows = cur.fetchall()
-        datas = []
-        for r in rows:
-            check = False
+    db = connect_db()
+    print("Entered manager1")
+    cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
+    rows = cur.fetchall()
+    datas = []
+    for r in rows:
+        check = False
 
-            for d in datas:
-                if r[0] == d.code:
-                    check = True
-                    d.addComposition(r[1],r[2])
-                    break
-
-            if not check:
-                codeData = CodeData(r[0])
-                codeData.addComposition(r[1],r[2])
-                datas.append(codeData)
-                
-        result_data = []
         for d in datas:
-            result_data.append(d.getSpreadData())
+            if r[0] == d.code:
+                check = True
+                d.addComposition(r[1],r[2])
+                break
 
-        cur = db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
-        rows = cur.fetchall()
-        rows = [r[0] for r in rows]
-        db.close()
-        return render_template("admin1.html", datas = datas, options=rows, layout=1)
+        if not check:
+            codeData = CodeData(r[0])
+            codeData.addComposition(r[1],r[2])
+            datas.append(codeData)
+            
+    result_data = []
+    for d in datas:
+        result_data.append(d.getSpreadData())
+
+    cur = db.cursor().execute('SELECT COM_NM FROM COMPOSITION ORDER BY COM_ID')
+    rows = cur.fetchall()
+    rows = [r[0] for r in rows]
+    db.close()
+    return render_template("admin1.html", datas = datas, options=rows, layout=1)
      
 @app.route("/manager2")
 def manager2():
     if not session.get("login"):
         return redirect("/login")
-    else :
-        print("Entered manager2")
-        db = connect_db()
-        cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
-        rows = cur.fetchall()
-        db.close()
-        datas = []
-        for r in rows:
-            check = False
 
-            for d in datas:
-                if r[0] == d.composition:
-                    check = True
-                    d.addDescription(r[1],r[2])
-                    break
+    print("Entered manager2")
+    db = connect_db()
+    cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
+    rows = cur.fetchall()
+    db.close()
+    datas = []
+    for r in rows:
+        check = False
 
-            if not check:
-                composData = CompositionData(r[0])
-                composData.addDescription(r[1],r[2])
-                datas.append(composData)
-                
-        result_data = []
         for d in datas:
-            result_data.append(d.getSpreadData())
+            if r[0] == d.composition:
+                check = True
+                d.addDescription(r[1],r[2])
+                break
 
-        return render_template("admin2.html", datas = datas, layout=2)
+        if not check:
+            composData = CompositionData(r[0])
+            composData.addDescription(r[1],r[2])
+            datas.append(composData)
+            
+    result_data = []
+    for d in datas:
+        result_data.append(d.getSpreadData())
+
+    return render_template("admin2.html", datas = datas, layout=2)
 
 @app.route("/manager3")
 def manager3():
+    if not session.get("login"):
+        return redirect("/login")
     return render_template("admin3.html", layout=3)
 
 @app.route("/result", methods=['POST'])
 def result():
+    if not session.get("login"):
+        return redirect("/login")
+
     print("Result Chat Page")
     if request.method == 'POST':     
         db = connect_db()
@@ -217,6 +226,8 @@ ORDER BY A.COM_NUMBER, B.DESC_ID''')
 
 @app.route("/deleteCode", methods=['POST'])
 def deleteCode():
+    if not session.get("login"):
+        return redirect("/login")
     print("deleteCode")
     print(str(request.form))
     if request.method == 'POST':  
@@ -230,6 +241,8 @@ def deleteCode():
 
 @app.route("/deleteDesc", methods=['POST'])
 def deleteDesc():
+    if not session.get("login"):
+        return redirect("/login")
     print("deleteDesc")
     print(str(request.form))
     if request.method == 'POST':
@@ -252,6 +265,8 @@ def deleteDesc():
 
 @app.route("/insertCode", methods=['POST'])
 def insertCode():
+    if not session.get("login"):
+        return redirect("/login")
     print("insertCode")
     print(str(request.form))
     if request.method == 'POST':  
@@ -274,6 +289,8 @@ def insertCode():
 
 @app.route("/insertDesc", methods=['POST'])
 def insertDesc():
+    if not session.get("login"):
+        return redirect("/login")
     print("insertDesc")
     print(str(request.form))
     if request.method == 'POST':
@@ -310,6 +327,8 @@ def insertDesc():
 
 @app.route("/checkCode", methods=['POST'])
 def checkCode():
+    if not session.get("login"):
+        return redirect("/login")
     print("checkCode")
     print(str(request.form))
     check = False
@@ -326,6 +345,8 @@ def checkCode():
 
 @app.route("/manager/upload",methods=['POST'])
 def upload():
+    if not session.get("login"):
+        return redirect("/login")
     print("upload")
     print(request.form)
     if request.method == 'POST':
@@ -335,16 +356,24 @@ def upload():
         db.close()
 
     if request.form['exampleRadios'] == 'option1':
-        
         return redirect("/manager1")
     else :
         return redirect("/manager2")
 
-    
+@app.route('/manager/downloadTemplate')
+def downloadFile ():
+    if not session.get("login"):
+        return redirect("/login")
+    #For windows you need to use drive name [ex: F:/Example.pdf]
+    path = "docs/Template.zip"
+    return send_file(path, as_attachment=True)
 
-def excelUpload(excelFile):
-    print(excelFile.filename)
-    load_workbook(filename=BytesIO(excelFile))
+
+def excelUpload(excelFile: FileStorage):
+    print(type(excelFile))
+    #excelFile.filename
+    wb = load_workbook(filename=BytesIO(excelFile.read()))
+    print(wb.get_sheet_by_name)
 
 def init_db():
     with closing(connect_db()) as db:
