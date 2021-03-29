@@ -270,22 +270,25 @@ def insertCode():
     print("insertCode")
     print(str(request.form))
     if request.method == 'POST':  
-        db = connect_db()
         code = request.form['code']
         compos_list = []
         for i in range(1,11):
             try:
                 compos_list.append(request.form['compos'+str(i)])
             except KeyError:
-                print("[WARN] It Does not exists key")
+                compos_list.append(0)
 
         if code and not '' == code:
             for i, compos in enumerate(compos_list):
                 if compos != '':
-                    db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{i}+1,(select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'))')
-                    db.commit()
-        db.close()
+                    insertCode(code, i+1, compos)
     return redirect("/manager1")
+
+def insertCode(code, comp_index, compos):
+    db = connect_db()
+    db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))')
+    db.commit()
+    db.close()
 
 @app.route("/insertDesc", methods=['POST'])
 def insertDesc():
@@ -301,47 +304,70 @@ def insertDesc():
             try:
                 desc_list.append(request.form['desc'+str(i)])
             except KeyError:
-                print("[WARN] It Does not exists key")
+                pass
 
         if compos and not '' == compos:
+            comId = insertComposFunc(compos)
             for i, desc in enumerate(desc_list):
                 if desc != '':
-                    cur = db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
-                    row = cur.fetchall()
-                    if row:
-                        row = row[0][0]
-                        db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row},{i}+1,\'{desc}\')')
-                    else:
-                        cur = db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
-                        row = cur.fetchall()
-                        if row:
-                            row = row[0][0]
-                            db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row}+1,\'{compos}\')')
-                            db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({row}+1,{i}+1,\'{desc}\')')
-                        else:
-                            db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values(1,{i}+1,\'{desc}\')')
-                            
-                    db.commit()
+                    insertDescFunc(comId, i+1, desc)
         db.close()
     return redirect("/manager2")
 
-@app.route("/checkCode", methods=['POST'])
-def checkCode():
+def getComposId(compos):
+    db = connect_db()
+    cur = db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
+    id = cur.fetchall()
+    db.close()
+    if id:
+        return id
+    else :
+        return None
+
+def insertComposFunc(compos):
+    db = connect_db()
+    id = getComposId(compos)
+    if not id:
+        cur = db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
+        row = cur.fetchall()
+        print(row)
+        row = row[0][0]
+        if not row:
+            row = 0
+
+        row = row + 1
+        db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row},\'{compos}\')')
+        
+    db.commit()
+    db.close()
+    return row
+
+def insertDescFunc(comId, index, desc):
+    db = connect_db()
+    db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')')
+    db.commit()
+    db.close()
+
+@app.route("/checkCode", methods=['POST','GET'])
+def checkCode(code):
     if not session.get("login"):
         return redirect("/login")
     print("checkCode")
-    print(str(request.form))
     check = False
     if request.method == 'POST':
-        db = connect_db()
-        code = request.form['code']
-        cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
-        row = cur.fetchall()
-
-        if len(row) != 0 :
-            check = True
-        db.close()
+        check = checkCodeFunc(request.form['code'])
     return jsonify({'check' : check}), 200
+
+def checkCodeFunc(code):
+    check = False
+    db = connect_db()
+    cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
+    row = cur.fetchall()
+
+    if len(row) != 0 :
+        check = True
+    db.close()
+    return check
 
 @app.route("/manager/upload",methods=['POST'])
 def upload():
@@ -350,16 +376,17 @@ def upload():
     print("upload")
     print(request.form)
     if request.method == 'POST':
-        db = connect_db()
         f = request.files['file']
-        excelUpload(f)
-        db.close()
+        if request.form['exampleRadios'] == 'option1':
+            excelUpload(f, 1)
+            return redirect("/manager1")
+        else :
+            excelUpload(f, 2)
+            return redirect("/manager2")
 
-    if request.form['exampleRadios'] == 'option1':
-        return redirect("/manager1")
     else :
-        return redirect("/manager2")
-
+        return redirect("/manager")
+    
 @app.route('/manager/downloadTemplate')
 def downloadFile ():
     if not session.get("login"):
@@ -369,11 +396,54 @@ def downloadFile ():
     return send_file(path, as_attachment=True)
 
 
-def excelUpload(excelFile: FileStorage):
-    print(type(excelFile))
-    #excelFile.filename
+def excelUpload(excelFile: FileStorage, option):
+    #insert compos
+    #insert code
+
     wb = load_workbook(filename=BytesIO(excelFile.read()))
-    print(wb.get_sheet_by_name)
+    sheet = wb.get_sheet_by_name("데이터")
+    if option == 1 and sheet[1][0].value == '코드':
+        rowIndex = 2
+        row = sheet[rowIndex]
+        
+        while row[0].value:
+            print('code check : ', checkCodeFunc(row[0].value))
+            cellIndex = 0
+            cellValue = row[cellIndex]
+            printStr = ''
+            while cellValue.value:
+                printStr = printStr + '\t' + str(cellValue.value)
+                cellIndex = cellIndex + 1
+                cellValue = row[cellIndex]
+            
+            print(printStr)
+            rowIndex = rowIndex + 1
+            row = sheet[rowIndex]
+
+
+    elif option == 2 and sheet[1][0] == '구분코드':
+        rowIndex = 2
+        row = sheet[rowIndex]
+        
+        while row[0].value:
+            print('code check : ', checkCodeFunc(row[0].value))
+            cellIndex = 0
+            cellValue = row[cellIndex]
+            printStr = ''
+            while cellValue.value:
+                printStr = printStr + '\t' + str(cellValue.value)
+                cellIndex = cellIndex + 1
+                cellValue = row[cellIndex]
+            
+            print(printStr)
+            rowIndex = rowIndex + 1
+            row = sheet[rowIndex]
+
+    else :
+        print("업로드 양식이 잘못되었습니다.")
+        pass
+
+
 
 def init_db():
     with closing(connect_db()) as db:
