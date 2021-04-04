@@ -59,7 +59,6 @@ def loginCheck():
             pwd = rows[0][0]
             if pwd == password:
                 print("로그인 성공")
-                
                 ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
                 print("ip = ", ip)
                 session["login"] = ip
