@@ -317,7 +317,7 @@ def insertDesc():
 def getComposId(compos):
     db = connect_db()
     cur = db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
-    id = cur.fetchall()
+    id = cur.fetchall()[0]
     db.close()
     if id:
         return id
@@ -330,14 +330,15 @@ def insertComposFunc(compos):
     if not id:
         cur = db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
         row = cur.fetchall()
-        print(row)
         row = row[0][0]
         if not row:
             row = 0
 
         row = row + 1
         db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row},\'{compos}\')')
-        
+    else :
+        row = id[0]
+
     db.commit()
     db.close()
     return row
@@ -361,7 +362,7 @@ def checkCode(code):
 def checkCodeFunc(code):
     check = False
     db = connect_db()
-    cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = {code}')
+    cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = \'{code}\'')
     row = cur.fetchall()
 
     if len(row) != 0 :
@@ -374,7 +375,6 @@ def upload():
     if not session.get("login"):
         return redirect("/login")
     print("upload")
-    print(request.form)
     if request.method == 'POST':
         f = request.files['file']
         if request.form['exampleRadios'] == 'option1':
@@ -401,44 +401,43 @@ def excelUpload(excelFile: FileStorage, option):
     #insert code
 
     wb = load_workbook(filename=BytesIO(excelFile.read()))
-<<<<<<< HEAD
-    print(wb.get_sheet_by_name("데이터"))
-=======
     sheet = wb.get_sheet_by_name("데이터")
+
     if option == 1 and sheet[1][0].value == '코드':
         rowIndex = 2
         row = sheet[rowIndex]
         
         while row[0].value:
-            print('code check : ', checkCodeFunc(row[0].value))
-            cellIndex = 0
+            code = row[0].value
+            cellIndex = 1
             cellValue = row[cellIndex]
-            printStr = ''
             while cellValue.value:
-                printStr = printStr + '\t' + str(cellValue.value)
+                insertCode(code, cellIndex, str(cellValue.value))
                 cellIndex = cellIndex + 1
-                cellValue = row[cellIndex]
-            
-            print(printStr)
+                try:
+                    cellValue = row[cellIndex]
+                except:
+                    break
             rowIndex = rowIndex + 1
             row = sheet[rowIndex]
 
 
-    elif option == 2 and sheet[1][0] == '구분코드':
+    elif option == 2 and sheet[1][0].value == '구분코드':
         rowIndex = 2
         row = sheet[rowIndex]
         
         while row[0].value:
-            print('code check : ', checkCodeFunc(row[0].value))
-            cellIndex = 0
+            compId = insertComposFunc(row[0].value)
+            cellIndex = 1
             cellValue = row[cellIndex]
-            printStr = ''
             while cellValue.value:
-                printStr = printStr + '\t' + str(cellValue.value)
+                insertDescFunc(compId,cellIndex,str(cellValue.value))
                 cellIndex = cellIndex + 1
-                cellValue = row[cellIndex]
+                try:
+                    cellValue = row[cellIndex]
+                except:
+                    break
             
-            print(printStr)
             rowIndex = rowIndex + 1
             row = sheet[rowIndex]
 
@@ -446,8 +445,6 @@ def excelUpload(excelFile: FileStorage, option):
         print("업로드 양식이 잘못되었습니다.")
         pass
 
-
->>>>>>> 8b0dbba22794d64a256b1ea818d47c16496607df
 
 def init_db():
     with closing(connect_db()) as db:
