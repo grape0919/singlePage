@@ -101,7 +101,7 @@ def cngAdmPwd():
             pwd = rows[0][0]
             if pwd == curPwd:
                 if cngPwd1 == cngPwd2:
-                    db.cursor().execute(f"UPDATE USER SET PWD={cngPwd2} where id='admin'")
+                    db.cursor().execute("UPDATE USER SET PWD={cngPwd2} where id='admin'".format(cngPwd2))
                     db.commit()
                     db.close()
                     flash("정상적으로 변경되었습니다. 다시 로그인해 주세요.")
@@ -203,10 +203,10 @@ def result():
         db = connect_db()
         code = -1
         code = request.form['code']
-        cur = db.cursor().execute(f'''SELECT B.DESCRIPT FROM NUMBER_CODE A
+        cur = db.cursor().execute('''SELECT B.DESCRIPT FROM NUMBER_CODE A
 LEFT JOIN DESCRIPTION B ON B.COM_ID = A.COM_ID
 WHERE A.CODE = {code}
-ORDER BY A.COM_NUMBER, B.DESC_ID''')
+ORDER BY A.COM_NUMBER, B.DESC_ID'''.format(code))
         rows = cur.fetchall()
         tempString=''
         if rows :
@@ -233,7 +233,7 @@ def deleteCode():
         db = connect_db()
         code = request.form['code']
         if code:
-            db.cursor().execute(f'DELETE FROM NUMBER_CODE WHERE CODE = {code}')
+            db.cursor().execute('DELETE FROM NUMBER_CODE WHERE CODE = {code}'.format(code))
             db.commit()
         db.close()
     return redirect("/manager1")
@@ -248,14 +248,14 @@ def deleteDesc():
         db = connect_db()
         compos = request.form['compos']
         if compos:
-            cur = db.cursor().execute(f'SELECT COM_ID FROM COMPOSITION WHERE COM_NM = \'{compos}\'')
+            cur = db.cursor().execute('SELECT COM_ID FROM COMPOSITION WHERE COM_NM = \'{compos}\''.formate(compos))
             rows = cur.fetchall()
             print(rows)
             if(len(rows) > 0):
                 com_id = rows[0][0]
 
-                db.cursor().execute(f'DELETE FROM DESCRIPTION WHERE COM_ID = {com_id}')
-                db.cursor().execute(f'DELETE FROM COMPOSITION WHERE COM_ID = {com_id}')
+                db.cursor().execute('DELETE FROM DESCRIPTION WHERE COM_ID = {com_id}'.format(com_id))
+                db.cursor().execute('DELETE FROM COMPOSITION WHERE COM_ID = {com_id}'.format(com_id))
                 
                 db.commit()
             pass
@@ -285,7 +285,7 @@ def insertCode():
 
 def insertCode(code, comp_index, compos):
     db = connect_db()
-    db.cursor().execute(f'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))')
+    db.cursor().execute('insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))'.format(code, comp_index, compos))
     db.commit()
     db.close()
 
@@ -315,7 +315,7 @@ def insertDesc():
 
 def getComposId(compos):
     db = connect_db()
-    cur = db.cursor().execute(f'select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'')
+    cur = db.cursor().execute('select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\''.format(compos))
     id = cur.fetchall()[0]
     db.close()
     if id:
@@ -327,14 +327,14 @@ def insertComposFunc(compos):
     db = connect_db()
     id = getComposId(compos)
     if not id:
-        cur = db.cursor().execute(f'select MAX(COM_ID) FROM COMPOSITION')
+        cur = db.cursor().execute('select MAX(COM_ID) FROM COMPOSITION')
         row = cur.fetchall()
         row = row[0][0]
         if not row:
             row = 0
 
         row = row + 1
-        db.cursor().execute(f'insert into COMPOSITION(COM_ID, COM_NM) values({row},\'{compos}\')')
+        db.cursor().execute('insert into COMPOSITION(COM_ID, COM_NM) values({row},\'{compos}\')'.format(row,compos))
     else :
         row = id[0]
 
@@ -344,7 +344,7 @@ def insertComposFunc(compos):
 
 def insertDescFunc(comId, index, desc):
     db = connect_db()
-    db.cursor().execute(f'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')')
+    db.cursor().execute('insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')'.format(comId,index,desc))
     db.commit()
     db.close()
 
@@ -361,7 +361,7 @@ def checkCode(code):
 def checkCodeFunc(code):
     check = False
     db = connect_db()
-    cur = db.cursor().execute(f'select * from NUMBER_CODE where CODE = \'{code}\'')
+    cur = db.cursor().execute('select * from NUMBER_CODE where CODE = \'{code}\''.format(code))
     row = cur.fetchall()
 
     if len(row) != 0 :
