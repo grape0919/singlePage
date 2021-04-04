@@ -1,3 +1,4 @@
+# --*-- coding: UTF-8
 from flask import Flask, g, render_template, request, redirect, jsonify, session, flash, send_file
 import sqlite3
 from contextlib import closing
@@ -14,9 +15,11 @@ from openpyxl import load_workbook
 
 from werkzeug.datastructures import FileStorage
 
+from flask_session import Session
+
 app = Flask(__name__)
-
-
+sess = Session()
+app.secret_key = '-Zqy0XFo__Y1TLyJFkjjrg'
 PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 DATABASE = os.path.join(PROJECT_ROOT,'rdbms','example.db')
@@ -395,7 +398,7 @@ def downloadFile ():
     return send_file(path, as_attachment=True)
 
 
-def excelUpload(excelFile: FileStorage, option):
+def excelUpload(FileStorage, option):
     #insert compos
     #insert code
 
@@ -456,9 +459,10 @@ def init_db():
 
 
 if __name__ == '__main__':
-    # pass
+    pass
     # url = 'http://localhost'
     #  webbrowser.open(url)
-    app.secret_key = 'hkdevstudio'
+    #app.secret_key = '-Zqy0XFo__Y1TLyJFkjjrg'
     #app.config['SESSION_TYPE'] = 'filesystem'
-    app.run(host='0.0.0.0', port=80, debug=True)
+    #sess.init_app(app)
+    # app.run(host='0.0.0.0', port=80, debug=True)
