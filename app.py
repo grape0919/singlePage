@@ -373,7 +373,7 @@ def excelUpload(excelFile: FileStorage):
     print(type(excelFile))
     #excelFile.filename
     wb = load_workbook(filename=BytesIO(excelFile.read()))
-    print(wb.get_sheet_by_name)
+    print(wb.get_sheet_by_name("데이터"))
 
 def init_db():
     with closing(connect_db()) as db:
