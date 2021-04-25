@@ -395,7 +395,7 @@ def downloadFile ():
     return send_file(path, as_attachment=True)
 
 
-def excelUpload(excelFile: FileStorage, option):
+def excelUpload(excelFile, option):
     #insert compos
     #insert code
 
@@ -455,7 +455,7 @@ def init_db():
         db.commit()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':``
     # pass
     # url = 'http://localhost'
     #  webbrowser.open(url)
