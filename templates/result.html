@@ -19,7 +19,7 @@
               </svg>
             </div>
           </div>
-          <div class="writing">escrevendo...</div>
+          <div class="writing">전송중...</div>
         </div>
       </div>
       <div class="conversation-container">
@@ -97,7 +97,7 @@
                 if(message.sender) {
                   hideConversationWriting();
                 } else {
-                  showConversationWriting();
+                   ();
                 }
               }, delayTime - messageBetweenDelay);
           
@@ -112,6 +112,7 @@
               }, delayTime);
           
               if(conversation.messages.length === messageIndex + 1) {
+                return;
                 setTimeout(function(){
                   hideConversationWriting();
                 }, delayTime);
@@ -125,15 +126,17 @@
                     opacity: 0
                   });
           
-                  setTimeout(function(){
-                    messages.remove();
-                  }, 400);
-          
                   currentConversation += 1;
           
                   if(!conversationData[currentConversation]){
                     currentConversation = 0;
                   }
+
+                  setTimeout(function(){
+                    messages.remove();
+                  }, 400);
+          
+                  
           
                   executeConversation();
                 }, delayTime);
