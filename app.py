@@ -104,7 +104,7 @@ def cngAdmPwd():
             pwd = rows[0][0]
             if pwd == curPwd:
                 if cngPwd1 == cngPwd2:
-                    db.cursor().execute("UPDATE USER SET PWD={cngPwd2} where id='admin'".format(cngPwd2))
+                    db.cursor().execute("UPDATE USER SET PWD={cngPwd2} where id='admin'".format(cngPwd2=cngPwd2))
                     db.commit()
                     db.close()
                     flash("정상적으로 변경되었습니다. 다시 로그인해 주세요.")
@@ -128,6 +128,7 @@ def manager():
 
 @app.route("/manager1")
 def manager1(): #숫자코드 - 구분 등록/삭제
+    print(DATABASE)
     if not session.get("login"):
         return redirect("/login")
     db = connect_db()
@@ -209,7 +210,7 @@ def result():
         cur = db.cursor().execute('''SELECT B.DESCRIPT FROM NUMBER_CODE A
 LEFT JOIN DESCRIPTION B ON B.COM_ID = A.COM_ID
 WHERE A.CODE = {code}
-ORDER BY A.COM_NUMBER, B.DESC_ID'''.format(code))
+ORDER BY A.COM_NUMBER, B.DESC_ID'''.format(code=code))
         rows = cur.fetchall()
         tempString=''
         if rows :
@@ -236,7 +237,7 @@ def deleteCode():
         db = connect_db()
         code = request.form['code']
         if code:
-            db.cursor().execute('DELETE FROM NUMBER_CODE WHERE CODE = {code}'.format(code))
+            db.cursor().execute('DELETE FROM NUMBER_CODE WHERE CODE = {code}'.format(code=code))
             db.commit()
         db.close()
     return redirect("/manager1")
@@ -251,14 +252,14 @@ def deleteDesc():
         db = connect_db()
         compos = request.form['compos']
         if compos:
-            cur = db.cursor().execute('SELECT COM_ID FROM COMPOSITION WHERE COM_NM = \'{compos}\''.formate(compos))
+            cur = db.cursor().execute('SELECT COM_ID FROM COMPOSITION WHERE COM_NM = \'{compos}\''.format(compos=compos))
             rows = cur.fetchall()
             print(rows)
             if(len(rows) > 0):
                 com_id = rows[0][0]
 
-                db.cursor().execute('DELETE FROM DESCRIPTION WHERE COM_ID = {com_id}'.format(com_id))
-                db.cursor().execute('DELETE FROM COMPOSITION WHERE COM_ID = {com_id}'.format(com_id))
+                db.cursor().execute('DELETE FROM DESCRIPTION WHERE COM_ID = {com_id}'.format(com_id=com_id))
+                db.cursor().execute('DELETE FROM COMPOSITION WHERE COM_ID = {com_id}'.format(com_id=com_id))
                 
                 db.commit()
             pass
@@ -288,7 +289,7 @@ def insertCode():
 
 def insertCode(code, comp_index, compos):
     db = connect_db()
-    db.cursor().execute('insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))'.format(code, comp_index, compos))
+    db.cursor().execute('insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))'.format(code=code, comp_index=comp_index, compos=compos))
     db.commit()
     db.close()
 
@@ -318,8 +319,8 @@ def insertDesc():
 
 def getComposId(compos):
     db = connect_db()
-    cur = db.cursor().execute('select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\''.format(compos))
-    id = cur.fetchall()[0]
+    cur = db.cursor().execute('select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\''.format(compos=compos))
+    id = cur.fetchall()
     db.close()
     if id:
         return id
@@ -337,7 +338,7 @@ def insertComposFunc(compos):
             row = 0
 
         row = row + 1
-        db.cursor().execute('insert into COMPOSITION(COM_ID, COM_NM) values({row},\'{compos}\')'.format(row,compos))
+        db.cursor().execute('insert into COMPOSITION(COM_ID, COM_NM) values({row},\'{compos}\')'.format(row=row,compos=compos))
     else :
         row = id[0]
 
@@ -347,7 +348,7 @@ def insertComposFunc(compos):
 
 def insertDescFunc(comId, index, desc):
     db = connect_db()
-    db.cursor().execute('insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')'.format(comId,index,desc))
+    db.cursor().execute('insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')'.format(comId=comId,index=index,desc=desc))
     db.commit()
     db.close()
 
@@ -364,7 +365,7 @@ def checkCode(code):
 def checkCodeFunc(code):
     check = False
     db = connect_db()
-    cur = db.cursor().execute('select * from NUMBER_CODE where CODE = \'{code}\''.format(code))
+    cur = db.cursor().execute('select * from NUMBER_CODE where CODE = \'{code}\''.format(code=code))
     row = cur.fetchall()
 
     if len(row) != 0 :
