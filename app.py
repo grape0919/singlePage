@@ -199,8 +199,6 @@ def manager3():
 
 @app.route("/result", methods=['POST'])
 def result():
-    if not session.get("login"):
-        return redirect("/login")
 
     print("Result Chat Page")
     if request.method == 'POST':     
