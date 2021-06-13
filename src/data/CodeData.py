@@ -2,11 +2,11 @@
 
 class CodeData:
     code = 0
-    composition_list = ['' for i in range(10)]
+    composition_list = ['' for i in range(15)]
     
     def __init__(self, code):
         self.code = code
-        self.composition_list = ['' for i in range(10)]
+        self.composition_list = ['' for i in range(15)]
 
     def addComposition(self, index, composition):
         self.composition_list[index-1] = composition
