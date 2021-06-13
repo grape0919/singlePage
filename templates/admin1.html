@@ -86,7 +86,7 @@
     
         <nav aria-label="Page navigation example">
             <ul class="pagination">
-                {% set page_start = (((now-1)/ 10)|int)+1 %}
+                {% set page_start = ((((now-1)/ 10)|int)*10)+1 %}
                 {% set page_end = page_start + 10%}
                 {% if page_end >  numofpage %}
                     {% set page_end = numofpage +1 %}
