@@ -16,6 +16,7 @@ from openpyxl import load_workbook
 from werkzeug.datastructures import FileStorage
 
 from flask_session import Session
+import time
 
 app = Flask(__name__)
 sess = Session()
@@ -127,28 +128,39 @@ def manager():
     return redirect("/manager1")
 
 @app.route("/manager1")
-def manager1(): #숫자코드 - 구분 등록/삭제
+def manager1():
+    return redirect("/manager1/1")
+
+@app.route("/manager1/<now_page>")
+def manager1page(now_page): #숫자코드 - 구분 등록/삭제
     print(DATABASE)
     if not session.get("login"):
         return redirect("/login")
     db = connect_db()
     print("Entered manager1")
-    cur = db.cursor().execute('SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE')
+    cur = db.cursor().execute('SELECT COUNT() FROM (SELECT * FROM NUMBER_CODE GROUP BY CODE)')
+    # print("!@#!@# cur : ", cur.fetchall())
+    numofpage = int(int(cur.fetchall()[0][0])/10)+1
+    print("!@#!@# numofpage : ", numofpage)
+    if int(now_page) > numofpage:
+        offset = (numofpage-1)*10
+    elif int(now_page) < 1:
+        offset = 0
+    else:
+        offset = (int(now_page)-1)*10
+    cur = db.cursor().execute('SELECT D.CODE, GROUP_CONCAT(D.COM_NUMBER || "!@#!@#", D.COM_NM || "!@!@!@") FROM (\
+SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE\
+) D \
+GROUP BY D.CODE LIMIT 10 OFFSET {offset}'.format(offset=offset))
     rows = cur.fetchall()
     datas = []
     for r in rows:
-        check = False
-
-        for d in datas:
-            if r[0] == d.code:
-                check = True
-                d.addComposition(r[1],r[2])
-                break
-
-        if not check:
-            codeData = CodeData(r[0])
-            codeData.addComposition(r[1],r[2])
-            datas.append(codeData)
+        codeData = CodeData(r[0])
+        for desc in str(r[1]).split('!@!@!@'):
+            de = desc.split("!@#!@#")
+            if len(de) == 2:
+                codeData.addComposition(int(de[0]),de[1])
+        datas.append(codeData)
             
     result_data = []
     for d in datas:
@@ -158,38 +170,54 @@ def manager1(): #숫자코드 - 구분 등록/삭제
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
     db.close()
-    return render_template("admin1.html", datas = datas, options=rows, layout=1)
+    return render_template("admin1.html", datas = datas, options=rows,numofpage=numofpage, now=int(now_page), layout=1)
      
 @app.route("/manager2")
 def manager2():
+    return redirect("/manager2/1")
+
+@app.route("/manager2/<now_page>")
+def manager2page(now_page):
     if not session.get("login"):
         return redirect("/login")
-
     print("Entered manager2")
     db = connect_db()
-    cur = db.cursor().execute('SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID')
+    start_time = time.time()
+    cur = db.cursor().execute('SELECT COUNT(COM_ID) FROM COMPOSITION ORDER BY COM_ID')
+    numofpage = int(int(cur.fetchall()[0][0])/10)+1
+    if int(now_page) > numofpage:
+        offset = (numofpage-1)*10
+    elif int(now_page) < 1:
+        offset = 0
+    else:
+        offset = (int(now_page)-1)*10
+    cur = db.cursor().execute('SELECT D.COM_NM, GROUP_CONCAT( D.DESC_ID || "!@#!@#", D.DESCRIPT || "!@!@!@") FROM (\
+SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID\
+) D \
+GROUP BY D.COM_NM \
+LIMIT 10 OFFSET {offset}'.format(offset=offset))
     rows = cur.fetchall()
+    print("!@#!@# 쿼리 실행 시간 : ", time.time() - start_time)
     db.close()
     datas = []
+    start_time = time.time()
     for r in rows:
-        check = False
-
-        for d in datas:
-            if r[0] == d.composition:
-                check = True
-                d.addDescription(r[1],r[2])
-                break
-
-        if not check:
-            composData = CompositionData(r[0])
-            composData.addDescription(r[1],r[2])
-            datas.append(composData)
-            
+        composData = CompositionData(r[0])
+        for desc in str(r[1]).split('!@!@!@'):
+            de = desc.split("!@#!@#")
+            if len(de) == 2:
+                composData.addDescription(int(de[0]),de[1])
+        datas.append(composData)
+        
     result_data = []
     for d in datas:
         result_data.append(d.getSpreadData())
+    
+    print("!@#!@# make data : ", time.time() - start_time)
+    print("!@#!@# numofpage : ", numofpage)
+    print("!@#!@# now : ", now_page)
 
-    return render_template("admin2.html", datas = datas, layout=2)
+    return render_template("admin2.html", datas = datas, numofpage=numofpage, now=int(now_page), layout=2)
 
 @app.route("/manager3")
 def manager3():
@@ -322,7 +350,7 @@ def getComposId(compos):
     id = cur.fetchall()
     db.close()
     if id:
-        return id
+        return id[0]
     else :
         return None
 
@@ -345,9 +373,11 @@ def insertComposFunc(compos):
     db.close()
     return row
 
-def insertDescFunc(comId, index, desc):
+def insertDescFunc(comId:int, index, desc):
     db = connect_db()
-    db.cursor().execute('insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')'.format(comId=comId,index=index,desc=desc))
+    query = 'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')'.format(comId=comId,index=index,desc=desc)
+    print("!@#!@# q : ", query)
+    db.cursor().execute(query)
     db.commit()
     db.close()
 

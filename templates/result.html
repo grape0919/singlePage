@@ -38,6 +38,7 @@
               messageTemplate = $('<div class="message hidden"></div>');
           
           function scrollConversationToBottom(){
+            console.log(conversationContainer.outerHeight())
             conversationContainer.animate({
               scrollTop: conversationContainer.outerHeight()
             }, 400);
@@ -102,6 +103,7 @@
               }, delayTime - messageBetweenDelay);
           
               setTimeout(function(){
+                
                 conversationContainer.append(newMessage);
           
                 scrollConversationToBottom();
@@ -112,10 +114,10 @@
               }, delayTime);
           
               if(conversation.messages.length === messageIndex + 1) {
-                return;
                 setTimeout(function(){
                   hideConversationWriting();
                 }, delayTime);
+                return;
           
                 delayTime += betweenConversationDelay
           

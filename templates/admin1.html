@@ -29,32 +29,7 @@
                 </tr>
             </thead>
             <tbody>
-            
-                {% for data in datas %}
-                <form class="form-horizontal" method='POST'>
-                    <tr>
-                        <th class="align-middle">
-                            <input class="form-control" id="number" name="code" type="text" maxlength="6" readonly value="{{ data.code }}"/>
-                        </th>
-                        {% for d in data.composition_list %}
-                            <td class="align-middle">
-                                <select class="form-control" name="compos{{loop.index}}" value="{{d}}">
-                                    <option value="" selected disabled hidden >선택해주세요.</option>
-                                    {% for option in options %}
-                                        <option {% if d == option %}selected{% endif %}>{{option}}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                        {% endfor %}
-                        <td><div>
-                            <button class="btn btn-danger" formaction="deleteCode" >삭제</button>
-                            <button class="btn btn-primary" formaction="insertCode" >수정</button>
-                        </td>
-                    </tr>
-                </form>
-                {% endfor %}
-
-                <form class="form-horizontal" action="insertCode" method='POST'>
+                <form class="form-horizontal" action="/insertCode" method='POST'>
                     <tr>
                         <th>
                             <input class="form-control" id="number" name="code" type="text" maxlength="6"/>
@@ -78,6 +53,55 @@
                     </tr>
                 </form>
             </tbody>
+            
+            <tbody>
+            
+                {% for data in datas %}
+                <form class="form-horizontal" method='POST'>
+                    <tr>
+                        <th class="align-middle">
+                            <input class="form-control" id="number" name="code" type="text" maxlength="6" readonly value="{{ data.code }}"/>
+                        </th>
+                        {% for d in data.composition_list %}
+                            <td class="align-middle">
+                                <select class="form-control" name="compos{{loop.index}}" value="{{d}}">
+                                    <option value="" selected disabled hidden >선택해주세요.</option>
+                                    {% for option in options %}
+                                        <option {% if d == option %}selected{% endif %}>{{option}}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        {% endfor %}
+                        <td><div>
+                            <button class="btn btn-danger" formaction="/deleteCode" >삭제</button>
+                            <button class="btn btn-primary" formaction="/insertCode" >수정</button>
+                        </td>
+                    </tr>
+                </form>
+                {% endfor %}
+
+                
+            </tbody>
         </table>
+    
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                <li class="page-item {% if now == '1' %} disabled {% endif %}">
+                <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                </li>
+                {% for i in range(1, numofpage+1)%}
+                    <li class="page-item {% if i == now %} active {% endif %}"><a class="page-link" href="/manager1/{{ i }}">{{i}}</a></li>
+                {% endfor %}
+                <li class="page-item {% if now == numofpage %} disabled {% endif %}">
+                <a class="page-link " href="/manager1/{{now}}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Next</span>
+                </a>
+                </li>
+            </ul>
+        </nav>
         
 {% endblock %}
