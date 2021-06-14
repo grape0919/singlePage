@@ -141,18 +141,21 @@ def manager1page(now_page): #숫자코드 - 구분 등록/삭제
     cur = db.cursor().execute('SELECT COUNT() FROM (SELECT * FROM NUMBER_CODE GROUP BY CODE)')
     # print("!@#!@# cur : ", cur.fetchall())
     numofpage = int(int(cur.fetchall()[0][0])/10)+1
-    print("!@#!@# numofpage : ", numofpage)
     if int(now_page) > numofpage:
         offset = (numofpage-1)*10
     elif int(now_page) < 1:
         offset = 0
     else:
         offset = (int(now_page)-1)*10
-    cur = db.cursor().execute('SELECT D.CODE, GROUP_CONCAT(D.COM_NUMBER || "!@#!@#", D.COM_NM || "!@!@!@") FROM (\
+    
+    query = 'SELECT D.CODE, GROUP_CONCAT(D.COM_NUMBER || "!@#!@#", D.COM_NM || "!@!@!@") FROM (\
 SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE\
 ) D \
-GROUP BY D.CODE LIMIT 10 OFFSET {offset}'.format(offset=offset))
+GROUP BY D.CODE LIMIT 10 OFFSET {offset}'.format(offset=offset)
+    cur = db.cursor().execute(query)
     rows = cur.fetchall()
+    print("query : ", query)
+    print("datas : ", rows)
     datas = []
     for r in rows:
         codeData = CodeData(r[0])
@@ -197,10 +200,8 @@ SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION 
 GROUP BY D.COM_NM \
 LIMIT 10 OFFSET {offset}'.format(offset=offset))
     rows = cur.fetchall()
-    print("!@#!@# 쿼리 실행 시간 : ", time.time() - start_time)
     db.close()
     datas = []
-    start_time = time.time()
     for r in rows:
         composData = CompositionData(r[0])
         for desc in str(r[1]).split('!@!@!@'):
@@ -212,10 +213,6 @@ LIMIT 10 OFFSET {offset}'.format(offset=offset))
     result_data = []
     for d in datas:
         result_data.append(d.getSpreadData())
-    
-    print("!@#!@# make data : ", time.time() - start_time)
-    print("!@#!@# numofpage : ", numofpage)
-    print("!@#!@# now : ", now_page)
 
     return render_template("admin2.html", datas = datas, numofpage=numofpage, now=int(now_page), layout=2)
 
@@ -302,7 +299,7 @@ def insertCode():
     if request.method == 'POST':  
         code = request.form['code']
         compos_list = []
-        for i in range(1,11):
+        for i in range(1,16):
             try:
                 compos_list.append(request.form['compos'+str(i)])
             except KeyError:
@@ -329,6 +326,9 @@ def insertDesc():
     if request.method == 'POST':
         db = connect_db()
         compos = request.form['compos']
+        if compos == 'PASS':
+            flash("PASS 는 등록할 수 없는 구분입니다.")
+            return render_template("alertPage.html", redirect="/manager2")
         desc_list = []
         for i in range(1,11):
             try:
