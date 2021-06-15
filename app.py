@@ -148,20 +148,21 @@ def manager1page(now_page): #숫자코드 - 구분 등록/삭제
     else:
         offset = (int(now_page)-1)*10
     
-    query = 'SELECT D.CODE, GROUP_CONCAT(D.COM_NUMBER || "!@#!@#", D.COM_NM || "!@!@!@") FROM (\
-SELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE\
-) D \
-GROUP BY D.CODE LIMIT 10 OFFSET {offset}'.format(offset=offset)
+    query = 'SELECT D.CODE, GROUP_CONCAT(D.COM_NUMBER || "!@#!@#" || IFNULL(D.COM_NM, ""), "!@!@!@") \
+FROM (SELECT A.CODE, A.COM_NUMBER ,C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.COM_ID) D \
+GROUP BY D.CODE'
+    # query = 'SELECT DSELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE'
     cur = db.cursor().execute(query)
     rows = cur.fetchall()
-    print("query : ", query)
-    print("datas : ", rows)
+    print("!@#!@# rows : ", rows)
     datas = []
     for r in rows:
+        print("!@#!@# r : ",r)
         codeData = CodeData(r[0])
         for desc in str(r[1]).split('!@!@!@'):
             de = desc.split("!@#!@#")
             if len(de) == 2:
+                print("!@#!@# ", de[0], " : ", de[1])
                 codeData.addComposition(int(de[0]),de[1])
         datas.append(codeData)
             
@@ -173,6 +174,9 @@ GROUP BY D.CODE LIMIT 10 OFFSET {offset}'.format(offset=offset)
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
     db.close()
+    for data in datas:
+        print("!@#!@# datas : ", data.getSpreadData())
+
     return render_template("admin1.html", datas = datas, options=rows,numofpage=numofpage, now=int(now_page), layout=1)
      
 @app.route("/manager2")
@@ -194,7 +198,7 @@ def manager2page(now_page):
         offset = 0
     else:
         offset = (int(now_page)-1)*10
-    cur = db.cursor().execute('SELECT D.COM_NM, GROUP_CONCAT( D.DESC_ID || "!@#!@#", D.DESCRIPT || "!@!@!@") FROM (\
+    cur = db.cursor().execute('SELECT D.COM_NM, GROUP_CONCAT( D.DESC_ID || "!@#!@#" || IFNULL(D.DESCRIPT,""), "!@!@!@") FROM (\
 SELECT C.COM_NM, A.DESC_ID, A.DESCRIPT FROM DESCRIPTION A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY C.COM_ID\
 ) D \
 GROUP BY D.COM_NM \
@@ -295,7 +299,7 @@ def insertCode():
     if not session.get("login"):
         return redirect("/login")
     print("insertCode")
-    print(str(request.form))
+    print("!@#!@# insert : ",str(request.form))
     if request.method == 'POST':  
         code = request.form['code']
         compos_list = []
@@ -313,7 +317,9 @@ def insertCode():
 
 def insertCode(code, comp_index, compos):
     db = connect_db()
-    db.cursor().execute('insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))'.format(code=code, comp_index=comp_index, compos=compos))
+    query = 'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))'.format(code=code, comp_index=comp_index, compos=compos)
+    print("!@#!@# insert code q : ", query)
+    db.cursor().execute(query)
     db.commit()
     db.close()
 

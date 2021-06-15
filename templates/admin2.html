@@ -42,24 +42,27 @@
             <tbody>
             
                 {% for data in datas %}
-                <form class="form-horizontal" method='POST'>
-                    <tr>
-                        <th class="align-middle">
-                            <input class="form-control" name="compos" type="text" maxlength="10" readonly value="{{ data.composition }}"/>
-                        </th>
-                        {% for d in data.description_list %}
-                            <td class="align-middle">
-                                <input class="form-control" name="desc{{ loop.index }}" type="text" value="{{d}}">
-                            </td>
-                        {% endfor %}
-                        <td><div>
-                            <button class="btn btn-danger" formaction="/deleteDesc">삭제</button>
-                            <button class="btn btn-primary" formaction="/insertDesc">수정</button>
-                        </td>
-                    </tr>
-                </form>
+                    {% if data.composition == 'PASS' %}
+                    {% else %}
+                        <form class="form-horizontal" method='POST'>
+                            <tr>
+                                <th class="align-middle">
+                                    <input class="form-control" name="compos" type="text" maxlength="10" value="{{ data.composition }}"/>
+                                </th>
+                                {% for d in data.description_list %}
+                                    <td class="align-middle">
+                                        <input class="form-control" name="desc{{ loop.index }}" type="text" value="{{d}}">
+                                    </td>
+                                {% endfor %}
+                                <td><div>
+                                    <button class="btn btn-danger" formaction="/deleteDesc">삭제</button>
+                                    <button class="btn btn-primary" formaction="/insertDesc">수정</button>
+                                </td>
+                            </tr>
+                        </form>
+                    {% endif %}
                 {% endfor %}
-
+                
                 
             </tbody>
         </table>

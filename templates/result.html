@@ -72,7 +72,6 @@
             var delayTime = 0;
           
             var conversation = conversationData[currentConversation];
-            console.log("conversationName : " + conversationName)
             conversationName.text(conversation.name);
           
             $.each(conversation.messages, function(messageIndex, message) {
@@ -103,14 +102,18 @@
               }, delayTime - messageBetweenDelay);
           
               setTimeout(function(){
-                
-                conversationContainer.append(newMessage);
-          
-                scrollConversationToBottom();
-          
-                setTimeout(function(){
-                  newMessage.removeClass('hidden');
-                }, 100);
+                if(message.message === 'PASSPASSPASS'){
+                  var messages = conversationContainer.find('.message');
+                  messages.remove();                }
+                else{
+                  conversationContainer.append(newMessage);
+            
+                  scrollConversationToBottom();
+            
+                  setTimeout(function(){
+                    newMessage.removeClass('hidden');
+                  }, 100);
+                }
               }, delayTime);
           
               if(conversation.messages.length === messageIndex + 1) {
@@ -123,7 +126,7 @@
           
                 setTimeout(function(){
                   var messages = conversationContainer.find('.message');
-          
+
                   messages.css({
                     opacity: 0
                   });

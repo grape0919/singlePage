@@ -33,13 +33,4 @@ VALUES ('admin', '1111');
 INSERT INTO COMPOSITION(COM_ID, COM_NM)
 VALUES (1, 'PASS');
 INSERT INTO DESCRIPTION(COM_ID, DESC_ID, DESCRIPT)
-VALUES (1, 1, ''),
-(1,2,''),
-(1,3,''),
-(1,4,''),
-(1,5,''),
-(1,6,''),
-(1,7,''),
-(1,8,''),
-(1,9,''),
-(1,10,'');
+VALUES (1, 1, 'PASSPASSPASS')
