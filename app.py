@@ -154,15 +154,15 @@ GROUP BY D.CODE'
     # query = 'SELECT DSELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE'
     cur = db.cursor().execute(query)
     rows = cur.fetchall()
-    print("!@#!@# rows : ", rows)
+    # print("!@#!@# rows : ", rows)
     datas = []
     for r in rows:
-        print("!@#!@# r : ",r)
+        # print("!@#!@# r : ",r)
         codeData = CodeData(r[0])
         for desc in str(r[1]).split('!@!@!@'):
             de = desc.split("!@#!@#")
             if len(de) == 2:
-                print("!@#!@# ", de[0], " : ", de[1])
+                # print("!@#!@# ", de[0], " : ", de[1])
                 codeData.addComposition(int(de[0]),de[1])
         datas.append(codeData)
             
@@ -174,8 +174,8 @@ GROUP BY D.CODE'
     rows = cur.fetchall()
     rows = [r[0] for r in rows]
     db.close()
-    for data in datas:
-        print("!@#!@# datas : ", data.getSpreadData())
+    # for data in datas:
+        # print("!@#!@# datas : ", data.getSpreadData())
 
     return render_template("admin1.html", datas = datas, options=rows,numofpage=numofpage, now=int(now_page), layout=1)
      
@@ -299,7 +299,7 @@ def insertCode():
     if not session.get("login"):
         return redirect("/login")
     print("insertCode")
-    print("!@#!@# insert : ",str(request.form))
+    # print("!@#!@# insert : ",str(request.form))
     if request.method == 'POST':  
         code = request.form['code']
         compos_list = []
@@ -318,7 +318,6 @@ def insertCode():
 def insertCode(code, comp_index, compos):
     db = connect_db()
     query = 'insert or replace into NUMBER_CODE(CODE, COM_NUMBER, COM_ID) values({code},{comp_index},IFNULL((select COM_ID FROM COMPOSITION WHERE COM_NM=\'{compos}\'),0))'.format(code=code, comp_index=comp_index, compos=compos)
-    print("!@#!@# insert code q : ", query)
     db.cursor().execute(query)
     db.commit()
     db.close()
@@ -382,7 +381,7 @@ def insertComposFunc(compos):
 def insertDescFunc(comId:int, index, desc):
     db = connect_db()
     query = 'insert or replace into DESCRIPTION(COM_ID, DESC_ID, DESCRIPT) values({comId},{index},\'{desc}\')'.format(comId=comId,index=index,desc=desc)
-    print("!@#!@# q : ", query)
+
     db.cursor().execute(query)
     db.commit()
     db.close()
