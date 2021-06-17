@@ -436,7 +436,7 @@ def excelUpload(excelFile, option):
     #insert code
 
     wb = load_workbook(filename=BytesIO(excelFile.read()))
-    sheet = wb.get_sheet_by_name("데이터")
+    sheet = wb["데이터"]
 
     if option == 1 and sheet[1][0].value == '코드':
         rowIndex = 2
@@ -444,6 +444,7 @@ def excelUpload(excelFile, option):
         
         while row[0].value:
             code = row[0].value
+            print(" !@#!@# upload code : ", code)
             cellIndex = 1
             cellValue = row[cellIndex]
             while cellValue.value:
