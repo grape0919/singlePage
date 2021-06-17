@@ -444,7 +444,7 @@ def excelUpload(excelFile, option):
         
         while row[0].value:
             code = row[0].value
-            print(" !@#!@# upload code : ", code)
+            # print(" !@#!@# upload code : ", code)
             cellIndex = 1
             cellValue = row[cellIndex]
             while cellValue.value:
