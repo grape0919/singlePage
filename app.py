@@ -150,7 +150,8 @@ def manager1page(now_page): #숫자코드 - 구분 등록/삭제
     
     query = 'SELECT D.CODE, GROUP_CONCAT(D.COM_NUMBER || "!@#!@#" || IFNULL(D.COM_NM, ""), "!@!@!@") \
 FROM (SELECT A.CODE, A.COM_NUMBER ,C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.COM_ID) D \
-GROUP BY D.CODE'
+GROUP BY D.CODE \
+LIMIT 10 OFFSET {offset}'.format(offset=offset)
     # query = 'SELECT DSELECT A.CODE, A.COM_NUMBER, C.COM_NM FROM NUMBER_CODE A LEFT JOIN COMPOSITION C ON A.COM_ID = C.COM_ID ORDER BY A.CODE'
     cur = db.cursor().execute(query)
     rows = cur.fetchall()
