@@ -248,7 +248,7 @@ ORDER BY A.COM_NUMBER, B.DESC_ID'''.format(code=code))
                         tempString = tempString + ','
                     tempString = tempString + '{message: \'' + str(row[0]) + '\',sender: false}'
 
-            tempString = tempString + ',{message: \'전송끝\',sender: false}]}];'
+            # tempString = tempString + ',{message: \'전송끝\',sender: false}]}];'
         db.close()
         return render_template("result.html", resultString=tempString, wrongway=False)
     else:
